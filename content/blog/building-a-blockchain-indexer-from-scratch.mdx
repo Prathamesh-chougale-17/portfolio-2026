@@ -1,0 +1,17 @@
+## Mission premise
+
+A blockchain indexer is a memory system. It observes chain events, stores them in a queryable shape, and survives replays, retries, and partial failure.
+
+## System architecture
+
+The hardest part is not reading events. The hard part is idempotency. Every event needs a stable identity, every write needs conflict behavior, and every processor needs to tolerate seeing the same signal twice.
+
+```ts
+const eventId = `${chainId}:${blockNumber}:${transactionHash}:${logIndex}`
+```
+
+<ArchitectureDiagram title="Indexer Replay Path" />
+
+## Field notes
+
+Treat chain data as eventually consistent infrastructure. The interface should show confidence levels instead of pretending every transaction arrives instantly.

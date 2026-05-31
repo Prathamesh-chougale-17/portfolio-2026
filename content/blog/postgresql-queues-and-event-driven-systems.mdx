@@ -1,0 +1,20 @@
+## Mission premise
+
+PostgreSQL can be more than storage. With careful modeling, it can anchor event-driven workflows while keeping the system understandable.
+
+## System architecture
+
+I like starting with explicit event tables before reaching for distributed complexity. The table becomes an audit log, a queue boundary, and a debugging console.
+
+```ts
+type DomainEvent = {
+  id: string
+  type: string
+  payload: unknown
+  status: "pending" | "processing" | "completed" | "failed"
+}
+```
+
+## Field notes
+
+Queues should reduce pressure, not hide it. The best systems expose backlog, retries, and failure reason as first-class telemetry.

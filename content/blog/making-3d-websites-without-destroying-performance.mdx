@@ -1,0 +1,16 @@
+## Mission premise
+
+3D on the web should support the content. If the scene becomes heavier than the message, the experience fails.
+
+## System architecture
+
+React Three Fiber works best when the scene is isolated, lazy, and decorative enough to fall back gracefully. Text, navigation, and forms stay native HTML so the product remains accessible.
+
+```ts
+const useWebGLAsAtmosphere = true
+const keepCriticalContentNative = true
+```
+
+## Field notes
+
+Use fewer lights, fewer post-processing passes, and fewer moving parts. A single strong object can feel more cinematic than a noisy universe.
