@@ -24,7 +24,7 @@ export const profile = {
     { label: "Hackathon wins", value: "5+" },
     { label: "LeetCode rating", value: en.about.stats.leetcodeRating },
     { label: "Problems solved", value: "250+" },
-    { label: "Open-source orbit", value: "12k+ repo" },
+    { label: "Open-source work", value: "12k+ repo" },
   ],
   socials: en.contact.socials.links.map((link) => ({
     label: link.label,
@@ -78,6 +78,97 @@ export const backendFlow = [
   "Database",
   "Blockchain Indexer",
   "Response",
+]
+
+export type ArchitectureLayer = {
+  id: string
+  label: string
+  category: "Frontend" | "Backend" | "Data" | "Blockchain" | "Operations"
+  role: string
+  stacks: string[]
+  responsibilities: string[]
+  flow: string[]
+}
+
+export const architectureLayers: ArchitectureLayer[] = [
+  {
+    id: "interface",
+    label: "Interface Surface",
+    category: "Frontend",
+    role: "Turns backend and chain state into visible product feedback.",
+    stacks: ["Next.js", "React", "TypeScript", "Tailwind CSS", "wagmi"],
+    responsibilities: [
+      "Render authenticated product flows",
+      "Expose loading, empty, error, and success states",
+      "Keep wallet and form interactions understandable",
+    ],
+    flow: ["Route", "Form state", "API call", "Visual feedback"],
+  },
+  {
+    id: "boundary",
+    label: "API Boundary",
+    category: "Backend",
+    role: "Accepts requests, validates intent, and rejects unsafe input early.",
+    stacks: ["Node.js", "NestJS", "Express.js", "REST APIs", "GraphQL"],
+    responsibilities: [
+      "Validate payloads before business logic",
+      "Shape response contracts for the frontend",
+      "Separate public routes from internal actions",
+    ],
+    flow: ["Request", "Validation", "Controller", "Response contract"],
+  },
+  {
+    id: "services",
+    label: "Service Layer",
+    category: "Backend",
+    role: "Coordinates product rules, integrations, and long-running work.",
+    stacks: ["Node.js", "NestJS", "Prisma", "Redis", "System Design"],
+    responsibilities: [
+      "Keep business rules away from route handlers",
+      "Make repeatable work idempotent",
+      "Translate product actions into durable system events",
+    ],
+    flow: ["Use case", "Service method", "Event", "Result state"],
+  },
+  {
+    id: "storage",
+    label: "Data Spine",
+    category: "Data",
+    role: "Stores product truth with explicit ownership and query paths.",
+    stacks: ["PostgreSQL", "MongoDB", "Redis", "Prisma"],
+    responsibilities: [
+      "Model stable identifiers and relationships",
+      "Cache high-read paths without hiding source of truth",
+      "Support audit, analytics, and recovery flows",
+    ],
+    flow: ["Entity", "Relation", "Cache", "Query"],
+  },
+  {
+    id: "chain",
+    label: "Chain Adapter",
+    category: "Blockchain",
+    role: "Treats blockchain as infrastructure with typed transaction state.",
+    stacks: ["Solidity", "Ethereum", "viem", "wagmi", "Web3"],
+    responsibilities: [
+      "Separate wallet UX from contract boundaries",
+      "Track pending, confirmed, and failed transactions",
+      "Index chain events into readable application state",
+    ],
+    flow: ["Wallet", "Signature", "Transaction", "Indexer"],
+  },
+  {
+    id: "ops",
+    label: "Runtime Ops",
+    category: "Operations",
+    role: "Keeps builds, deploys, containers, and observability predictable.",
+    stacks: ["Docker", "Kubernetes", "CI/CD", "Redis", "System Design"],
+    responsibilities: [
+      "Package services consistently",
+      "Make release paths repeatable",
+      "Expose health signals before users notice problems",
+    ],
+    flow: ["Build", "Container", "Deploy", "Telemetry"],
+  },
 ]
 
 export const projectFilters = [
@@ -190,7 +281,7 @@ export const projects: MissionProject[] = en.projects.map((project, index) => {
     description: project.description,
     problem: `Design and ship ${project.title} as a reliable product system with clear user flows, durable data boundaries, and a deployable architecture.`,
     role: "Product engineer, system designer, full-stack implementer, and deployment owner.",
-    architecture: `${project.title} is modeled as a layered mission: interface orbit, application services, data persistence, observability hooks, and release pipeline.`,
+    architecture: `${project.title} is modeled as a layered system: interface surface, API boundary, application services, data persistence, observability hooks, and release pipeline.`,
     backendDecisions: [
       "Keep validation close to the API boundary before data reaches business logic.",
       "Separate user-facing workflows from persistence and integration concerns.",
@@ -304,7 +395,7 @@ export const researchLogs: ResearchLog[] = [
   {
     slug: "smart-contracts-explained-through-orbital-systems",
     number: "LOG 007",
-    title: "Smart Contracts Explained Through Orbital Systems",
+    title: "Smart Contracts Explained Through System Boundaries",
     category: "Blockchain Engineering",
     date: "2026-02-22",
     readingTime: "5 min read",

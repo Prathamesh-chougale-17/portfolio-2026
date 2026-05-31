@@ -179,21 +179,8 @@
       320px 320px;
   }
 
-  .orbital-ring {
-    border: 1px solid rgb(34 211 238 / 22%);
-    box-shadow:
-      0 0 44px rgb(34 211 238 / 8%),
-      inset 0 0 44px rgb(124 58 237 / 8%);
-  }
-
   .text-balance {
     text-wrap: balance;
-  }
-}
-
-@keyframes orbit-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 

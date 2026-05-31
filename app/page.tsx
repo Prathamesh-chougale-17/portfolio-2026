@@ -1,12 +1,11 @@
 import Link from "next/link"
 import { ArrowUpRight, Database, Satellite, ServerCog } from "lucide-react"
 
-import { BlockchainOrbit } from "@/components/hud/BlockchainOrbit"
+import { ArchitectureSpider } from "@/components/hud/ArchitectureSpider"
 import { BackendFlow } from "@/components/hud/BackendFlow"
 import { HudPanel } from "@/components/hud/HudPanel"
 import { LaunchHero } from "@/components/hud/LaunchHero"
 import { SectionHeader } from "@/components/hud/SectionHeader"
-import { SkillOrbit } from "@/components/hud/SkillOrbit"
 import { ProjectGalaxy } from "@/components/projects/ProjectGalaxy"
 import { ResearchLogCard } from "@/components/blog/ResearchLogCard"
 import {
@@ -56,14 +55,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="skill-orbit" className="px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+      <section id="architecture-spider" className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10">
           <SectionHeader
-            label="Skill orbit"
-            title="A developer core surrounded by system tools."
-            description="Node, databases, APIs, React, TypeScript, blockchain tooling, and deployment practices orbit around a backend-first engineering mindset."
+            label="Architecture spider"
+            title="Stack choices mapped to system responsibility."
+            description="A relational view of where frameworks, databases, chain tooling, and operations fit inside an actual product architecture."
           />
-          <SkillOrbit />
+          <ArchitectureSpider />
         </div>
       </section>
 
@@ -77,17 +76,6 @@ export default function HomePage() {
           <div className="mt-10">
             <BackendFlow />
           </div>
-        </div>
-      </section>
-
-      <section id="blockchain-orbit" className="px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <BlockchainOrbit />
-          <SectionHeader
-            label="Blockchain orbit"
-            title="Blockchain is treated as infrastructure."
-            description="Wallet state, transaction status, indexing, and contract boundaries should feel observable, typed, and explainable - not mystical."
-          />
         </div>
       </section>
 

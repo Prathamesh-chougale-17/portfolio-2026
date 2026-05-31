@@ -24,7 +24,8 @@ export function Footer() {
           </div>
           <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
             {profile.tagline} A mission-control archive for backend systems,
-            blockchain protocols, frontend galaxies, and experiments in orbit.
+            blockchain protocols, frontend surfaces, and architecture
+            experiments.
           </p>
         </div>
         <div>

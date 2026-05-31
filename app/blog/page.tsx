@@ -1,4 +1,4 @@
-import { BookOpen, Database, Orbit, PenTool } from "lucide-react"
+import { BookOpen, Database, Network, PenTool } from "lucide-react"
 
 import { ResearchLogCard } from "@/components/blog/ResearchLogCard"
 import { SectionHeader } from "@/components/hud/SectionHeader"
@@ -42,7 +42,7 @@ export default function BlogPage() {
               </p>
             </div>
             <div className="border border-white/10 bg-white/[0.035] p-4">
-              <Orbit className="size-5 text-violet-200" />
+              <Network className="size-5 text-violet-200" />
               <p className="mt-4 font-heading text-3xl font-semibold text-slate-50">
                 MDX
               </p>

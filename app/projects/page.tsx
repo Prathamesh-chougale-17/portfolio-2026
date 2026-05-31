@@ -1,4 +1,4 @@
-import { Archive, Binary, Orbit, ServerCog } from "lucide-react"
+import { Archive, Binary, Blocks, ServerCog } from "lucide-react"
 
 import { ProjectFilters } from "@/components/projects/ProjectFilters"
 import { SectionHeader } from "@/components/hud/SectionHeader"
@@ -21,11 +21,11 @@ const stats = [
     icon: ServerCog,
   },
   {
-    label: "Blockchain orbits",
+    label: "Blockchain systems",
     value: projects.filter((project) =>
       project.categories.includes("Blockchain")
     ).length,
-    icon: Orbit,
+    icon: Blocks,
   },
   {
     label: "Experimental signals",

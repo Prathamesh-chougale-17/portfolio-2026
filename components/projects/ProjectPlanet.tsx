@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ExternalLink, Orbit } from "lucide-react"
+import { ArrowUpRight, ExternalLink } from "lucide-react"
 
 import { Icons } from "@/components/icons"
 import type { MissionProject } from "@/data/event-horizon"
@@ -60,7 +60,7 @@ export function ProjectPlanet({
             href={`/projects/${project.slug}`}
             className="inline-flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-cyan-200 uppercase transition hover:text-cyan-100"
           >
-            <Orbit className="size-4" />
+            <ArrowUpRight className="size-4" />
             Open mission
           </Link>
           <div className="flex gap-2">
