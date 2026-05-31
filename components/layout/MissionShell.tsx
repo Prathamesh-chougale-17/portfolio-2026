@@ -1,12 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import gsap from "gsap"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
 import Lenis from "lenis"
 
 import { Terminal } from "@/components/hud/Terminal"
 import { Footer } from "@/components/layout/Footer"
 import { Navbar } from "@/components/layout/Navbar"
 import { PageTransition } from "@/components/layout/PageTransition"
+
+gsap.registerPlugin(ScrollTrigger)
 
 export function MissionShell({ children }: { children: React.ReactNode }) {
   const [terminalOpen, setTerminalOpen] = useState(false)
@@ -17,20 +21,75 @@ export function MissionShell({ children }: { children: React.ReactNode }) {
     }
 
     const lenis = new Lenis({
-      lerp: 0.09,
-      wheelMultiplier: 0.9,
+      lerp: 0.075,
+      wheelMultiplier: 0.82,
+      touchMultiplier: 1.15,
+      prevent: (node) =>
+        node instanceof HTMLElement &&
+        Boolean(node.closest("[data-lenis-prevent]")),
     })
 
-    let frame = 0
-    function raf(time: number) {
-      lenis.raf(time)
-      frame = requestAnimationFrame(raf)
-    }
+    lenis.on("scroll", ScrollTrigger.update)
+    const tick = (time: number) => lenis.raf(time * 1000)
+    gsap.ticker.add(tick)
+    gsap.ticker.lagSmoothing(0)
 
-    frame = requestAnimationFrame(raf)
+    const mm = gsap.matchMedia()
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      const context = gsap.context(() => {
+        gsap.utils
+          .toArray<HTMLElement>(
+            "[data-cinematic], section:not(:first-of-type), article"
+          )
+          .forEach((element, index) => {
+            gsap.fromTo(
+              element,
+              {
+                autoAlpha: 0,
+                y: 54,
+                filter: "blur(10px)",
+              },
+              {
+                autoAlpha: 1,
+                y: 0,
+                filter: "blur(0px)",
+                duration: 0.95,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: element,
+                  start: "top 86%",
+                  end: "bottom 18%",
+                  toggleActions: "play none none reverse",
+                  refreshPriority: index,
+                },
+              }
+            )
+          })
+
+        gsap.utils
+          .toArray<HTMLElement>("[data-parallax-depth]")
+          .forEach((element) => {
+            const depth = Number(element.dataset.parallaxDepth ?? "24")
+            gsap.to(element, {
+              y: depth,
+              ease: "none",
+              scrollTrigger: {
+                trigger: element,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 0.9,
+              },
+            })
+          })
+      })
+
+      return () => context.revert()
+    })
 
     return () => {
-      cancelAnimationFrame(frame)
+      mm.revert()
+      gsap.ticker.remove(tick)
+      lenis.off("scroll", ScrollTrigger.update)
       lenis.destroy()
     }
   }, [])
