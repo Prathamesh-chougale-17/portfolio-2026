@@ -410,19 +410,6 @@ function entryId() {
     : `${Date.now()}-${Math.random()}`
 }
 
-function bootEntry(): Entry {
-  return {
-    id: "terminal-boot",
-    command: "source ~/.profile",
-    lines: [
-      "Workspace shell initialized.",
-      "Profile, projects, writing, and contact are ready.",
-    ],
-    time: "boot",
-    variant: "system",
-  }
-}
-
 function routeEntry(
   route: RouteState,
   articleContent?: ReactNode,
@@ -443,7 +430,7 @@ function routeEntry(
 }
 
 function initialEntries(route: RouteState, articleContent?: ReactNode) {
-  return [bootEntry(), routeEntry(route, articleContent)]
+  return [routeEntry(route, articleContent)]
 }
 
 function normalizeRoute(path: string) {
