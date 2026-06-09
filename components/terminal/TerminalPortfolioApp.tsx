@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import {
+  type CSSProperties,
   type ComponentType,
   type FormEvent,
   type KeyboardEvent,
@@ -40,8 +41,20 @@ import {
 
 import { Icons } from "@/components/icons"
 import { TerminalContactForm } from "@/components/terminal/TerminalContactForm"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   about,
   architectureLayers,
@@ -91,6 +104,17 @@ type RouteState = {
 
 type TerminalTheme = "cyan" | "amber" | "violet"
 
+type ShellThemeConfig = {
+  accent: string
+  border: string
+  glow: string
+  label: string
+  marker: string
+  soft: string
+  text: string
+  vars: CSSProperties & Record<`--shell-${string}`, string>
+}
+
 const INITIAL_STAMP = "--:--:--"
 const PENDING_COMMAND_KEY = "pwsh-studio-pending-command"
 const SIDEBAR_STORAGE_KEY = "pwsh-studio-sidebar-open"
@@ -100,32 +124,32 @@ let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
 
 const routeItems = [
-  { label: "Home", href: "/", command: "open /", icon: Home, meta: "boot" },
+  { label: "Home", href: "/", command: "cd /", icon: Home, meta: "boot" },
   {
     label: "About",
     href: "/about",
-    command: "open /about",
+    command: "cd /about",
     icon: UserRound,
     meta: "profile",
   },
   {
     label: "Projects",
     href: "/projects",
-    command: "open /projects",
+    command: "cd /projects",
     icon: Archive,
     meta: `${projects.length} cases`,
   },
   {
     label: "Blog",
     href: "/blog",
-    command: "open /blog",
+    command: "cd /blog",
     icon: BookOpen,
     meta: `${researchLogs.length} notes`,
   },
   {
     label: "Contact",
     href: "/contact",
-    command: "open /contact",
+    command: "cd /contact",
     icon: Mail,
     meta: "message",
   },
@@ -133,21 +157,25 @@ const routeItems = [
 
 const coreCommands = [
   "help",
+  "man",
+  "cd /projects",
   "whoami",
   "status",
-  "skills",
-  "architecture",
+  "ls -la",
+  "cat profile.json",
+  "grep backend",
   "projects",
   "contact",
-  "matrix",
-  "easter-eggs",
 ]
 
 const commandList = [
   "help",
+  "man",
+  "commands",
   "home",
   "about",
   "whoami",
+  "uname -a",
   "status",
   "skills",
   "architecture",
@@ -159,27 +187,43 @@ const commandList = [
   "notes",
   "note ",
   "contact",
-  "open /",
-  "open /about",
-  "open /projects",
-  "open /blog",
-  "open /contact",
+  "cd /",
+  "cd /about",
+  "cd /projects",
+  "cd /blog",
+  "cd /contact",
+  "cd ..",
   "ls",
+  "ls -la",
+  "tree",
   "pwd",
   "date",
   "uptime",
-  "ping",
+  "ping pwsh-core",
+  "ps",
+  "ps aux",
+  "env",
+  "which cd",
+  "cat profile.json",
+  "cat projects.json",
+  "cat notes.json",
+  "cat architecture.map",
+  "grep ",
+  "find ",
+  "curl /api/contact",
+  "xdg-open resume.pdf",
+  "xdg-open workbench",
   "theme cyan",
   "theme amber",
   "theme violet",
-  "matrix",
-  "clear matrix",
-  "coffee",
-  "decode state",
-  "sudo ship-it",
-  "open workbench",
+  "./matrix",
+  "pkill matrix",
+  "make coffee",
+  "base64 -d state.txt",
+  "sudo ./ship-it",
   "easter-eggs",
   "history",
+  "history -c",
   "clear",
 ]
 
@@ -188,47 +232,85 @@ const allCommandShortcuts = commandList.map((command) =>
     ? "project oorja-ai"
     : command === "note "
       ? "note production reliability"
+      : command === "grep "
+        ? "grep backend"
+        : command === "find "
+          ? "find projects -name backend"
       : command
 )
 
-const terminalThemes: Record<
-  TerminalTheme,
-  {
-    accent: string
-    border: string
-    glow: string
-    label: string
-    marker: string
-    soft: string
-    text: string
-  }
-> = {
+const terminalThemes: Record<TerminalTheme, ShellThemeConfig> = {
   cyan: {
-    accent: "bg-cyan-300 text-slate-950",
-    border: "border-cyan-300/35",
-    glow: "shadow-[0_0_90px_rgba(34,211,238,0.12)]",
+    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    border: "border-[color:var(--shell-border-strong)]",
+    glow: "shadow-[var(--shell-glow)]",
     label: "Cyan",
-    marker: "bg-cyan-300",
-    soft: "bg-cyan-300/[0.075] text-cyan-100",
-    text: "text-cyan-200",
+    marker: "bg-[var(--shell-accent)]",
+    soft: "bg-[var(--shell-accent-soft)] text-[var(--shell-accent-text)]",
+    text: "text-[var(--shell-accent-text)]",
+    vars: {
+      "--shell-page": "#050505",
+      "--shell-bg": "#0c0c0c",
+      "--shell-bg-elevated": "#111111",
+      "--shell-panel": "#141414",
+      "--shell-panel-soft": "#191919",
+      "--shell-muted": "#9ca3af",
+      "--shell-line": "rgb(255 255 255 / 0.10)",
+      "--shell-border": "rgb(255 255 255 / 0.12)",
+      "--shell-border-strong": "rgb(34 211 238 / 0.58)",
+      "--shell-accent": "rgb(34 211 238)",
+      "--shell-accent-text": "rgb(165 243 252)",
+      "--shell-accent-soft": "rgb(34 211 238 / 0.13)",
+      "--shell-glow": "0 0 0 1px rgb(34 211 238 / 0.16), 0 24px 80px rgb(34 211 238 / 0.10)",
+    },
   },
   amber: {
-    accent: "bg-yellow-300 text-slate-950",
-    border: "border-yellow-200/40",
-    glow: "shadow-[0_0_90px_rgba(250,204,21,0.12)]",
+    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    border: "border-[color:var(--shell-border-strong)]",
+    glow: "shadow-[var(--shell-glow)]",
     label: "Amber",
-    marker: "bg-yellow-300",
-    soft: "bg-yellow-300/[0.085] text-yellow-100",
-    text: "text-yellow-200",
+    marker: "bg-[var(--shell-accent)]",
+    soft: "bg-[var(--shell-accent-soft)] text-[var(--shell-accent-text)]",
+    text: "text-[var(--shell-accent-text)]",
+    vars: {
+      "--shell-page": "#060504",
+      "--shell-bg": "#0f0d08",
+      "--shell-bg-elevated": "#151108",
+      "--shell-panel": "#181309",
+      "--shell-panel-soft": "#20180b",
+      "--shell-muted": "#a8a29e",
+      "--shell-line": "rgb(255 255 255 / 0.10)",
+      "--shell-border": "rgb(255 255 255 / 0.12)",
+      "--shell-border-strong": "rgb(250 204 21 / 0.58)",
+      "--shell-accent": "rgb(250 204 21)",
+      "--shell-accent-text": "rgb(254 240 138)",
+      "--shell-accent-soft": "rgb(250 204 21 / 0.14)",
+      "--shell-glow": "0 0 0 1px rgb(250 204 21 / 0.16), 0 24px 80px rgb(250 204 21 / 0.10)",
+    },
   },
   violet: {
-    accent: "bg-violet-300 text-slate-950",
-    border: "border-violet-300/40",
-    glow: "shadow-[0_0_90px_rgba(167,139,250,0.13)]",
+    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    border: "border-[color:var(--shell-border-strong)]",
+    glow: "shadow-[var(--shell-glow)]",
     label: "Violet",
-    marker: "bg-violet-300",
-    soft: "bg-violet-300/[0.085] text-violet-100",
-    text: "text-violet-200",
+    marker: "bg-[var(--shell-accent)]",
+    soft: "bg-[var(--shell-accent-soft)] text-[var(--shell-accent-text)]",
+    text: "text-[var(--shell-accent-text)]",
+    vars: {
+      "--shell-page": "#05040a",
+      "--shell-bg": "#0d0b14",
+      "--shell-bg-elevated": "#131020",
+      "--shell-panel": "#171225",
+      "--shell-panel-soft": "#1d1730",
+      "--shell-muted": "#a1a1aa",
+      "--shell-line": "rgb(255 255 255 / 0.10)",
+      "--shell-border": "rgb(255 255 255 / 0.12)",
+      "--shell-border-strong": "rgb(196 181 253 / 0.60)",
+      "--shell-accent": "rgb(196 181 253)",
+      "--shell-accent-text": "rgb(221 214 254)",
+      "--shell-accent-soft": "rgb(196 181 253 / 0.15)",
+      "--shell-glow": "0 0 0 1px rgb(196 181 253 / 0.18), 0 24px 80px rgb(167 139 250 / 0.12)",
+    },
   },
 }
 
@@ -253,11 +335,11 @@ function storeSidebarOpen(value: boolean) {
 }
 
 const eggHints = [
-  "open workbench",
-  "matrix",
-  "coffee",
-  "decode state",
-  "sudo ship-it",
+  "xdg-open workbench",
+  "./matrix",
+  "make coffee",
+  "base64 -d state.txt",
+  "sudo ./ship-it",
 ]
 
 const matrixLines = [
@@ -299,12 +381,12 @@ function resolveRoute(
   const path = normalizeRoute(pathname ?? "/")
 
   if (path === "/") {
-    return { command: "open /", label: "Home", path: "/", view: "home" }
+    return { command: "cd /", label: "Home", path: "/", view: "home" }
   }
 
   if (path === "/about") {
     return {
-      command: "open /about",
+      command: "cd /about",
       label: "About",
       path,
       view: "about",
@@ -313,7 +395,7 @@ function resolveRoute(
 
   if (path === "/projects") {
     return {
-      command: "open /projects",
+      command: "cd /projects",
       label: "Projects",
       path,
       view: "projects",
@@ -332,7 +414,7 @@ function resolveRoute(
   }
 
   if (path === "/blog") {
-    return { command: "open /blog", label: "Blog", path, view: "blog" }
+    return { command: "cd /blog", label: "Blog", path, view: "blog" }
   }
 
   if (path.startsWith("/blog/")) {
@@ -347,7 +429,7 @@ function resolveRoute(
   }
 
   if (path === "/contact") {
-    return { command: "open /contact", label: "Contact", path, view: "contact" }
+    return { command: "cd /contact", label: "Contact", path, view: "contact" }
   }
 
   return {
@@ -394,6 +476,198 @@ function findResearchLog(query: string) {
       log.title.toLowerCase().includes(normalized) ||
       log.number.toLowerCase() === normalized
   )
+}
+
+function resolveLocationTarget(rawTarget: string, currentPath: string) {
+  const target = rawTarget.trim()
+
+  if (!target || target === "~" || target === "/") {
+    return "/"
+  }
+
+  if (target === ".") {
+    return currentPath
+  }
+
+  if (target === "..") {
+    const segments = currentPath.split("/").filter(Boolean)
+    if (segments.length <= 1) return "/"
+    return `/${segments.slice(0, -1).join("/")}`
+  }
+
+  const routeAliases: Record<string, string> = {
+    home: "/",
+    about: "/about",
+    project: "/projects",
+    projects: "/projects",
+    blog: "/blog",
+    notes: "/blog",
+    contact: "/contact",
+  }
+
+  if (routeAliases[target.toLowerCase()]) {
+    return routeAliases[target.toLowerCase()]
+  }
+
+  return target.startsWith("/") ? target : `/${target}`
+}
+
+function workspaceTree() {
+  return [
+    "total 8",
+    "drwxr-xr-x  5 prath studio   160 now .",
+    "drwxr-xr-x  3 prath studio    96 now ..",
+    "drwxr-xr-x  2 prath studio    64 now about",
+    "drwxr-xr-x  2 prath studio    64 now projects",
+    "drwxr-xr-x  2 prath studio    64 now blog",
+    "drwxr-xr-x  2 prath studio    64 now contact",
+    "-rw-r--r--  1 prath studio  1.2k now profile.json",
+    "-rw-r--r--  1 prath studio  5.4k now projects.json",
+    "-rw-r--r--  1 prath studio  2.1k now notes.json",
+    "-rw-r--r--  1 prath studio  928B now architecture.map",
+  ]
+}
+
+function workspaceTreeGraph() {
+  return [
+    ".",
+    "|-- about/",
+    "|-- projects/",
+    "|   |-- <project-slug>/",
+    "|-- blog/",
+    "|   |-- <note-slug>/",
+    "|-- contact/",
+    "|-- profile.json",
+    "|-- projects.json",
+    "|-- notes.json",
+    "`-- architecture.map",
+  ]
+}
+
+function profileJson() {
+  return JSON.stringify(
+    {
+      name: profile.name,
+      role: profile.role,
+      focus: profile.tagline,
+      workspace: "PWSH Studio",
+      skills: skills.slice(0, 10),
+    },
+    null,
+    2
+  )
+}
+
+function projectsJson() {
+  return JSON.stringify(
+    projects.slice(0, 10).map((project) => ({
+      id: project.projectId,
+      title: project.title,
+      route: `/projects/${project.slug}`,
+      category: project.category,
+      stack: project.stack.slice(0, 5),
+    })),
+    null,
+    2
+  )
+}
+
+function notesJson() {
+  return JSON.stringify(
+    researchLogs.map((log) => ({
+      id: log.number,
+      title: log.title,
+      route: `/blog/${log.slug}`,
+      read: log.readingTime,
+    })),
+    null,
+    2
+  )
+}
+
+function architectureMap() {
+  return architectureLayers
+    .map(
+      (layer) =>
+        `${layer.id.padEnd(10)} ${layer.category.padEnd(10)} ${layer.flow.join(" -> ")}`
+    )
+    .join("\n")
+}
+
+function commandIndexLines() {
+  return [
+    "Navigation",
+    "  cd /, cd /about, cd /projects, cd /blog, cd /contact, cd ..",
+    "  project <name>, note <name>",
+    "Workspace",
+    "  ls, ls -la, tree, pwd, date, uptime, env",
+    "  cat profile.json|projects.json|notes.json|architecture.map",
+    "Discovery",
+    "  whoami, uname -a, status, skills, architecture, projects, blog",
+    "  grep <query>, find projects -name <query>",
+    "Actions",
+    "  contact, xdg-open resume.pdf, curl /api/contact, ping pwsh-core",
+    "Preferences",
+    "  theme cyan|amber|violet",
+    "Extras",
+    "  ./matrix, pkill matrix, make coffee, base64 -d state.txt, sudo ./ship-it, xdg-open workbench",
+  ]
+}
+
+function processLines(latency: number, routePath: string) {
+  return [
+    "USER       PID  %CPU %MEM COMMAND",
+    `prath      101  0.${latency}  2.1  next-router --route=${routePath}`,
+    "prath      118  0.2  1.4  contact-api --listen=/api/contact",
+    "prath      124  0.1  1.2  project-index --watch",
+    "prath      137  0.1  0.9  notes-reader --mdx",
+    "prath      149  0.0  0.6  theme-service --persist",
+  ]
+}
+
+function searchWorkspace(query: string) {
+  const needle = query.trim().toLowerCase()
+
+  if (!needle) {
+    return ["grep requires a query.", "Try: grep backend"]
+  }
+
+  const projectMatches = projects
+    .filter((project) =>
+      [
+        project.title,
+        project.description,
+        project.category,
+        project.type,
+        ...project.stack,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle)
+    )
+    .slice(0, 6)
+    .map((project) => `project  ${project.projectId}  ${project.title}`)
+
+  const noteMatches = researchLogs
+    .filter((log) =>
+      [log.title, log.excerpt, log.category, ...log.tags]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle)
+    )
+    .slice(0, 6)
+    .map((log) => `note     ${log.number}  ${log.title}`)
+
+  const skillMatches = skills
+    .filter((skill) => skill.toLowerCase().includes(needle))
+    .slice(0, 8)
+    .map((skill) => `skill    ${skill}`)
+
+  const matches = [...projectMatches, ...noteMatches, ...skillMatches]
+
+  return matches.length
+    ? [`Matches for "${query}":`, ...matches]
+    : [`No workspace matches for "${query}".`]
 }
 
 export function TerminalPortfolioApp({
@@ -525,7 +799,7 @@ export function TerminalPortfolioApp({
     if (target === pathname) {
       appendEntry({
         command,
-        lines: [`Already open at ${target}.`],
+        lines: [`Already at ${target}.`],
         variant: "system",
       })
       return
@@ -692,13 +966,19 @@ export function TerminalPortfolioApp({
       return
     }
 
+    if (/^(cd|set-location|sl)(\s|$)/i.test(command)) {
+      const target = command.replace(/^(cd|set-location|sl)\s*/i, "")
+      navigateTo(resolveLocationTarget(target, routeState.path), command)
+      return
+    }
+
     if (normalized.startsWith("open ")) {
       navigateTo(command.replace(/^open\s+/i, ""), command)
       return
     }
 
-    if (normalized.startsWith("theme ")) {
-      const nextTheme = normalized.replace("theme ", "").trim()
+    if (normalized.startsWith("theme ") || normalized.startsWith("set-theme ")) {
+      const nextTheme = normalized.replace(/^(theme|set-theme)\s+/i, "").trim()
       if (!["cyan", "amber", "violet"].includes(nextTheme)) {
         appendEntry({
           command,
@@ -718,15 +998,38 @@ export function TerminalPortfolioApp({
 
     switch (normalized) {
       case "help":
+      case "get-help":
+      case "man":
+      case "man pwsh":
         appendEntry({
           command,
           lines: [
             "Navigation: home, about, projects, project <name>, blog, note <name>, contact.",
-            "Routes: open /about, open /projects, open /projects/<slug>, open /blog/<slug>.",
+            "Routes: cd /about, cd /projects, cd /projects/<slug>, cd /blog/<slug>, cd ...",
+            "Linux: ls, tree, pwd, cat <file>, grep <query>, find projects -name <query>.",
             "Data: whoami, status, skills, architecture, projects --backend, projects --blockchain.",
-            "Shell: theme cyan|amber|violet, history, clear, matrix, clear matrix.",
+            "Shell: ps, uname -a, env, ping pwsh-core, curl /api/contact, xdg-open resume.pdf.",
             "Extras: easter-eggs for hidden commands.",
           ],
+        })
+        return
+      case "get-command":
+      case "commands":
+        appendEntry({
+          command,
+          lines: commandIndexLines(),
+          variant: "success",
+        })
+        return
+      case "uname":
+      case "uname -a":
+        appendEntry({
+          command,
+          lines: [
+            "Linux pwsh-studio 6.9.0-terminal x86_64 GNU/Linux",
+            `${profile.name} / ${profile.role}`,
+          ],
+          variant: "success",
         })
         return
       case "whoami":
@@ -802,36 +1105,128 @@ export function TerminalPortfolioApp({
         })
         return
       case "ls":
+      case "ls -l":
+      case "ls -la":
+      case "dir":
+      case "gci":
+      case "get-childitem":
         appendEntry({
           command,
-          lines: [
-            "home/",
-            "about/",
-            "projects/",
-            "blog/",
-            "contact/",
-            "profile.json",
-            "architecture.map",
-          ],
+          lines: workspaceTree(),
+        })
+        return
+      case "tree":
+        appendEntry({
+          command,
+          lines: workspaceTreeGraph(),
         })
         return
       case "pwd":
+      case "get-location":
         appendEntry({ command, lines: [routeState.path] })
         return
       case "date":
+      case "get-date":
         appendEntry({ command, lines: [new Date().toString()] })
         return
       case "uptime":
+      case "get-uptime":
         appendEntry({ command, lines: [`Workspace uptime: ${uptime}s`] })
         return
       case "ping":
+      case "ping pwsh-core":
+      case "test-connection":
+      case "test-connection pwsh-core":
         appendEntry({
           command,
           lines: [`PING pwsh-core: seq=1 ttl=64 time=${latency}ms`],
           variant: "success",
         })
         return
+      case "ps":
+      case "ps aux":
+      case "get-process":
+        appendEntry({
+          command,
+          lines: processLines(latency, routeState.path),
+          variant: "success",
+        })
+        return
+      case "cat profile.json":
+      case "type profile.json":
+      case "gc profile.json":
+      case "get-content profile.json":
+        appendEntry({
+          command,
+          lines: [profileJson()],
+          variant: "success",
+        })
+        return
+      case "cat projects.json":
+      case "type projects.json":
+      case "gc projects.json":
+      case "get-content projects.json":
+        appendEntry({
+          command,
+          lines: [projectsJson()],
+          variant: "success",
+        })
+        return
+      case "cat notes.json":
+      case "type notes.json":
+      case "gc notes.json":
+      case "get-content notes.json":
+        appendEntry({
+          command,
+          lines: [notesJson()],
+          variant: "success",
+        })
+        return
+      case "cat architecture.map":
+      case "type architecture.map":
+      case "gc architecture.map":
+      case "get-content architecture.map":
+        appendEntry({
+          command,
+          lines: [architectureMap()],
+          variant: "success",
+        })
+        return
+      case "env":
+      case "printenv":
+        appendEntry({
+          command,
+          lines: [
+            "SHELL=/bin/bash",
+            `PWD=${routeState.path}`,
+            `USER=${profile.name.split(" ")[0].toLowerCase()}`,
+            `THEME=${theme}`,
+            "APP=PWSH Studio",
+          ],
+        })
+        return
+      case "curl /api/contact":
+        appendEntry({
+          command,
+          lines: [
+            "HTTP/1.1 200 OK",
+            "content-type: application/json",
+            "",
+            JSON.stringify(
+              {
+                route: "/api/contact",
+                method: "POST",
+                schema: "contactSchema",
+              },
+              null,
+              2
+            ),
+          ],
+          variant: "success",
+        })
+        return
       case "matrix":
+      case "./matrix":
         setMatrixMode(true)
         unlockEgg("matrix")
         appendEntry({
@@ -841,6 +1236,7 @@ export function TerminalPortfolioApp({
         })
         return
       case "clear matrix":
+      case "pkill matrix":
         setMatrixMode(false)
         appendEntry({
           command,
@@ -849,6 +1245,7 @@ export function TerminalPortfolioApp({
         })
         return
       case "coffee":
+      case "make coffee":
         unlockEgg("coffee")
         appendEntry({
           command,
@@ -860,6 +1257,7 @@ export function TerminalPortfolioApp({
         })
         return
       case "decode state":
+      case "base64 -d state.txt":
         unlockEgg("decode state")
         appendEntry({
           command,
@@ -871,6 +1269,7 @@ export function TerminalPortfolioApp({
         })
         return
       case "sudo ship-it":
+      case "sudo ./ship-it":
         unlockEgg("sudo ship-it")
         appendEntry({
           command,
@@ -881,9 +1280,11 @@ export function TerminalPortfolioApp({
           variant: "egg",
         })
         return
+      case "start-process workbench":
       case "open workbench":
+      case "xdg-open workbench":
         setWorkbenchOpen(true)
-        unlockEgg("open workbench")
+        unlockEgg("xdg-open workbench")
         appendEntry({
           command,
           lines: [
@@ -911,6 +1312,7 @@ export function TerminalPortfolioApp({
         })
         return
       case "history":
+      case "get-history":
         appendEntry({
           command,
           lines: history.length
@@ -918,16 +1320,101 @@ export function TerminalPortfolioApp({
             : ["No command history yet."],
         })
         return
+      case "clear-history":
+      case "history -c":
+        setHistory([])
+        appendEntry({
+          command,
+          lines: ["Command history cleared."],
+          variant: "success",
+        })
+        return
       case "clear":
       case "cls":
+      case "clear-host":
         setEntries([])
         return
       default:
+        if (/^(grep|rg|select-string|sls)\s+/i.test(command)) {
+          const query = command.replace(/^(grep|rg|select-string|sls)\s+/i, "")
+          appendEntry({
+            command,
+            lines: searchWorkspace(query),
+            variant: "success",
+          })
+          return
+        }
+
+        if (/^find\s+/i.test(command)) {
+          const query =
+            command.match(/-name\s+(.+)$/i)?.[1] ??
+            command.replace(/^find\s+/i, "")
+          appendEntry({
+            command,
+            lines: searchWorkspace(query),
+            variant: "success",
+          })
+          return
+        }
+
+        if (/^which\s+/i.test(command)) {
+          const name = command.replace(/^which\s+/i, "").trim()
+          const knownCommands = new Set(
+            commandList.map((item) => item.split(" ")[0].toLowerCase())
+          )
+          const isBuiltin = ["cd", "history", "clear"].includes(
+            name.toLowerCase()
+          )
+          appendEntry({
+            command,
+            lines: isBuiltin
+              ? [`${name}: shell built-in`]
+              : knownCommands.has(name.toLowerCase())
+                ? [`/usr/bin/${name}`]
+              : [`${name} not found`],
+            variant:
+              isBuiltin || knownCommands.has(name.toLowerCase())
+                ? "success"
+                : "error",
+          })
+          return
+        }
+
+        if (/^(get-content|cat|type|gc)\s+/i.test(command)) {
+          const target = command
+            .replace(/^(get-content|cat|type|gc)\s+/i, "")
+            .trim()
+          appendEntry({
+            command,
+            lines: [
+              `cat: ${target}: No such file or directory`,
+              "Available: profile.json, projects.json, notes.json, architecture.map.",
+            ],
+            variant: "error",
+          })
+          return
+        }
+
+        if (
+          normalized === "xdg-open resume.pdf" ||
+          normalized === "xdg-open /resume.pdf" ||
+          normalized === "start-process resume" ||
+          normalized === "start resume"
+        ) {
+          window.open("/resume.pdf", "_blank", "noopener,noreferrer")
+          appendEntry({
+            command,
+            lines: ["Opened resume.pdf"],
+            variant: "success",
+          })
+          return
+        }
+
         appendEntry({
           command,
           lines: [
             `Command not recognized: ${command}`,
-            "Type help for the PWSH command index.",
+            "Type help for the shell command index.",
           ],
           variant: "error",
         })
@@ -988,9 +1475,12 @@ export function TerminalPortfolioApp({
   }
 
   return (
-    <main className="relative min-h-svh overflow-x-hidden bg-[#02030a] text-slate-100 lg:h-svh lg:overflow-hidden">
-      <div className="star-noise pointer-events-none fixed inset-0 opacity-20" />
-      <div className="hud-grid pointer-events-none fixed inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_90%)] opacity-25" />
+    <main
+      className="relative min-h-svh overflow-x-hidden bg-[var(--shell-page)] text-slate-100 transition-colors duration-300 lg:h-svh lg:overflow-hidden"
+      style={themeConfig.vars}
+    >
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,var(--shell-accent-soft),transparent_28rem),linear-gradient(180deg,var(--shell-page),var(--shell-bg)_48%,var(--shell-page))] opacity-80" />
+      <div className="hud-grid pointer-events-none fixed inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_90%)] opacity-20" />
       <div className="relative z-10 mx-auto flex min-h-svh w-full max-w-[1680px] flex-col p-3 sm:p-4 lg:h-svh lg:min-h-0">
         <TerminalHeader
           activeLog={activeLog}
@@ -1029,52 +1519,56 @@ export function TerminalPortfolioApp({
             themeConfig={themeConfig}
           />
 
-          <section
+          <Card
+            size="sm"
             className={cn(
-              "hud-panel flex min-h-[72svh] flex-col overflow-hidden rounded-lg lg:h-full lg:min-h-0",
+              "flex min-h-[72svh] gap-0 overflow-hidden rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-0 text-slate-100 ring-1 ring-white/10 lg:h-full lg:min-h-0",
               themeConfig.glow
             )}
-            aria-label="PWSH output"
+            aria-label="Shell output"
             onWheel={onTerminalPanelWheel}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+            <CardHeader className="border-b border-[color:var(--shell-line)] bg-[var(--shell-bg-elevated)] px-4 py-3">
               <div className="flex items-center gap-3">
-                  <TerminalSquare className={cn("size-5", themeConfig.text)} />
+                <TerminalSquare className={cn("size-5", themeConfig.text)} />
                 <div>
                   <p className="font-mono text-xs tracking-[0.18em] text-slate-200 uppercase">
-                    pwsh output
+                    shell output
                   </p>
                   <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
                     route: {routeState.path}
                   </p>
                 </div>
               </div>
-              <span
-                className={cn(
-                  "border px-2 py-1 font-mono text-[10px] tracking-[0.14em] uppercase",
-                  themeConfig.border,
-                  themeConfig.soft
-                )}
-              >
-                {routeState.label}
-              </span>
-            </div>
+              <CardAction>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-7 rounded-none border px-2 font-mono text-[10px] tracking-[0.14em] uppercase",
+                    themeConfig.border,
+                    themeConfig.soft
+                  )}
+                >
+                  {routeState.label}
+                </Badge>
+              </CardAction>
+            </CardHeader>
 
-            <div
+            <CardContent
               ref={outputRef}
               className={cn(
-                "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-color:#22d3ee33_transparent] sm:px-5",
+                "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--shell-bg)] px-4 py-4 [scrollbar-color:var(--shell-border-strong)_transparent] sm:px-5",
                 matrixMode &&
-                  "bg-[linear-gradient(180deg,rgba(34,211,238,0.045),transparent_34%),repeating-linear-gradient(90deg,transparent_0_28px,rgba(34,211,238,0.035)_28px_29px)]"
+                  "bg-[linear-gradient(180deg,var(--shell-accent-soft),transparent_34%),repeating-linear-gradient(90deg,transparent_0_28px,var(--shell-accent-soft)_28px_29px)]"
               )}
               data-terminal-output
             >
               {[
                 {
                   id: "terminal-boot",
-                  command: "pwsh ./profile.ps1",
+                  command: "source ~/.profile",
                   lines: [
-                    "PWSH Studio initialized.",
+                    "Linux-style workspace shell initialized.",
                     "Profile, projects, writing, and contact are ready.",
                   ],
                   time: "boot",
@@ -1092,11 +1586,12 @@ export function TerminalPortfolioApp({
 
               {workbenchOpen ? <PwshLabPanel /> : null}
               {matrixMode ? <MatrixTelemetry /> : null}
-            </div>
+            </CardContent>
 
-            <form onSubmit={onSubmit} className="border-t border-white/10 p-4">
+            <CardFooter className="border-t border-[color:var(--shell-line)] bg-[var(--shell-bg-elevated)] px-4 py-4">
+              <form onSubmit={onSubmit} className="w-full">
               <label className="sr-only" htmlFor="terminal-command">
-                PWSH command
+                Shell command
               </label>
               {suggestions.length ? (
                 <div className="mb-2 flex flex-wrap gap-2">
@@ -1105,7 +1600,7 @@ export function TerminalPortfolioApp({
                       key={suggestion}
                       type="button"
                       onClick={() => setInput(suggestion)}
-                      className="border border-white/10 bg-white/[0.035] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-400 transition hover:border-cyan-300/35 hover:text-cyan-100"
+                      className="border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-400 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
                     >
                       {suggestion}
                     </button>
@@ -1114,12 +1609,12 @@ export function TerminalPortfolioApp({
               ) : null}
               <div
                 className={cn(
-                  "flex items-center gap-3 border bg-black/35 px-3 py-2",
+                  "flex items-center gap-3 border bg-[var(--shell-bg)] px-3 py-2 shadow-inner",
                   themeConfig.border
                 )}
               >
                 <span className={cn("font-mono", themeConfig.text)}>
-                  PS C:\Prathamesh&gt;
+                  prath@pwsh:{routeState.path === "/" ? "~" : routeState.path}$
                 </span>
                 <input
                   id="terminal-command"
@@ -1135,8 +1630,9 @@ export function TerminalPortfolioApp({
                   tab completes
                 </span>
               </div>
-            </form>
-          </section>
+              </form>
+            </CardFooter>
+          </Card>
 
           {inspectorOpen ? (
             <TerminalInspector
@@ -1183,8 +1679,10 @@ function TerminalHeader({
   const LinkedInIcon = Icons.linkedin
 
   return (
-    <header className="mb-3 shrink-0 rounded-lg border border-white/10 bg-[#02030a]/88 px-4 py-3 backdrop-blur-xl">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <header className="mb-3 shrink-0">
+      <Card className="gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10 backdrop-blur-xl">
+        <CardContent className="px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <span
             className={cn(
@@ -1217,7 +1715,7 @@ function TerminalHeader({
             aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
             onClick={() => onInspectorOpenChange(!inspectorOpen)}
             className={cn(
-              "h-9 rounded-none border border-white/10 bg-white/[0.035] px-3 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:border-cyan-300/40 hover:bg-white/[0.055] hover:text-cyan-100",
+              "h-9 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-3 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
               inspectorOpen && cn(themeConfig.border, themeConfig.soft)
             )}
           >
@@ -1231,7 +1729,7 @@ function TerminalHeader({
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub"
-            className="flex size-9 items-center justify-center border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-300/40 hover:text-cyan-100"
+            className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
           >
             <GitHubIcon className="size-4" />
           </a>
@@ -1240,7 +1738,7 @@ function TerminalHeader({
             target="_blank"
             rel="noreferrer"
             aria-label="LinkedIn"
-            className="flex size-9 items-center justify-center border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-300/40 hover:text-cyan-100"
+            className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
           >
             <LinkedInIcon className="size-4" />
           </a>
@@ -1256,6 +1754,8 @@ function TerminalHeader({
           </a>
         </div>
       </div>
+        </CardContent>
+      </Card>
     </header>
   )
 }
@@ -1293,10 +1793,11 @@ function TerminalQuickAccess({
   if (!open) {
     return (
       <aside
-        className="hud-panel min-h-0 rounded-lg p-2 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 rounded-lg lg:h-full"
         data-sidebar-open="false"
       >
-        <div className="flex min-h-0 flex-col items-center gap-2">
+        <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
+          <CardContent className="flex min-h-0 flex-col items-center gap-2 px-2 py-2">
           <Button
             type="button"
             variant="ghost"
@@ -1305,7 +1806,7 @@ function TerminalQuickAccess({
             title="Open sidebar"
             onClick={() => onOpenChange(true)}
             className={cn(
-              "rounded-md border bg-white/[0.035]",
+              "rounded-md border bg-[var(--shell-panel-soft)]",
               themeConfig.border,
               themeConfig.soft
             )}
@@ -1313,7 +1814,7 @@ function TerminalQuickAccess({
             <ChevronRight data-icon="inline-start" />
           </Button>
 
-          <div className="h-px w-full bg-white/10" />
+          <Separator className="bg-[var(--shell-line)]" />
 
           {routeItems.map((item) => {
             const Icon = item.icon
@@ -1334,7 +1835,7 @@ function TerminalQuickAccess({
                 title={`${item.label} - ${item.meta}`}
                 onClick={() => onNavigate(item.href, item.command)}
                 className={cn(
-                  "relative rounded-md border bg-white/[0.035] text-slate-300 hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100",
+                  "relative rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
                   active && cn(themeConfig.border, themeConfig.soft)
                 )}
               >
@@ -1349,28 +1850,29 @@ function TerminalQuickAccess({
               </Button>
             )
           })}
-        </div>
+          </CardContent>
+        </Card>
       </aside>
     )
   }
 
   return (
     <aside
-      className="hud-panel min-h-0 rounded-lg p-3 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      className="min-h-0 rounded-lg lg:h-full"
       data-sidebar-open="true"
     >
-      <div className="flex min-h-0 flex-col gap-3">
-        <div className="rounded-md border border-white/10 bg-white/[0.025] p-3">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
+        <CardHeader className="px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Network className={cn("size-4", themeConfig.text)} />
-              <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-100 uppercase">
+              <CardTitle className="font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase">
                 start menu
-              </p>
+              </CardTitle>
             </div>
-            <span className="font-mono text-[10px] text-slate-500">
+            <Badge variant="outline" className="rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-400">
               {routeItems.length} pages
-            </span>
+            </Badge>
             <Button
               type="button"
               variant="ghost"
@@ -1378,13 +1880,16 @@ function TerminalQuickAccess({
               aria-label="Close sidebar"
               title="Close sidebar"
               onClick={() => onOpenChange(false)}
-              className="rounded-md border border-white/10 bg-white/[0.035] text-slate-400 hover:border-cyan-300/35 hover:text-cyan-100"
+              className="rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-400 hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
             >
               <ChevronLeft data-icon="inline-start" />
             </Button>
           </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-1">
+        </CardHeader>
+        <Separator className="bg-[var(--shell-line)]" />
+        <CardContent className="min-h-0 flex-1 px-3 py-3">
+          <ScrollArea className="h-full pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
             {routeItems.map((item) => {
               const Icon = item.icon
               const active =
@@ -1405,7 +1910,7 @@ function TerminalQuickAccess({
                     "group relative h-auto min-h-12 w-full justify-between overflow-hidden rounded-md border px-3 py-2 text-left transition",
                     active
                       ? cn(themeConfig.border, themeConfig.soft)
-                      : "border-white/10 bg-white/[0.035] text-slate-300 hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100"
+                      : "border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
                   )}
                 >
                   <span
@@ -1426,49 +1931,39 @@ function TerminalQuickAccess({
                       </span>
                     </span>
                   </span>
-                  <span className="hidden shrink-0 font-mono text-[10px] text-slate-600 xl:inline">
+                  <Badge variant="outline" className="hidden shrink-0 rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-500 xl:inline-flex">
                     {item.href}
-                  </span>
+                  </Badge>
                 </Button>
               )
             })}
           </div>
-        </div>
+        </ScrollArea>
+        </CardContent>
 
-        <div className="rounded-md border border-white/10 bg-black/20 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-              commands
-            </p>
-            <div
-              aria-label="Command shortcut groups"
-              className="grid grid-cols-2 border border-white/10 bg-black/25 p-0.5"
-              role="tablist"
-            >
-              {(["core", "all"] as const).map((tab) => (
-                <Button
-                  key={tab}
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-selected={commandTab === tab}
-                  onClick={() => setCommandTab(tab)}
-                  role="tab"
-                  className={cn(
-                    "h-6 rounded-none px-2 py-1 font-mono text-[9px] tracking-[0.14em] uppercase transition",
-                    commandTab === tab
-                      ? cn(themeConfig.soft, themeConfig.border)
-                      : "text-slate-500 hover:text-slate-200"
-                  )}
-                >
-                  {tab === "core" ? "Core" : "All"}
-                </Button>
-              ))}
+        <Separator className="bg-[var(--shell-line)]" />
+        <CardContent className="px-3 py-3">
+          <Tabs
+            value={commandTab}
+            onValueChange={(value) => setCommandTab(value as "core" | "all")}
+            className="gap-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+                commands
+              </p>
+              <TabsList className="rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
+                <TabsTrigger value="core" className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase">
+                  Core
+                </TabsTrigger>
+                <TabsTrigger value="all" className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase">
+                  All
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </div>
 
           {commandTab === "all" ? (
-            <label className="mt-3 flex items-center gap-2 border border-white/10 bg-black/25 px-2">
+            <label className="flex items-center gap-2 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2">
               <Search className={cn("size-3.5 shrink-0", themeConfig.text)} />
               <Input
                 value={commandQuery}
@@ -1480,7 +1975,8 @@ function TerminalQuickAccess({
             </label>
           ) : null}
 
-          <div className="mt-3 grid gap-2">
+          <ScrollArea className="max-h-[min(38svh,390px)] pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
+          <div className="grid gap-2">
             {visibleCommands.length ? (
               visibleCommands.map((command) => (
                 <Button
@@ -1489,19 +1985,21 @@ function TerminalQuickAccess({
                   variant="ghost"
                   size="sm"
                   onClick={() => onCommand(command)}
-                  className="h-auto justify-start whitespace-normal rounded-md border border-white/10 bg-white/[0.035] px-2 py-2 text-left font-mono text-[11px] text-slate-300 transition hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100"
+                  className="h-auto justify-start whitespace-normal rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2 py-2 text-left font-mono text-[11px] text-slate-300 transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]"
                 >
                   {command}
                 </Button>
               ))
             ) : (
-              <p className="border border-white/10 bg-white/[0.025] px-2 py-2 font-mono text-[11px] text-slate-500">
+              <p className="border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2 py-2 font-mono text-[11px] text-slate-500">
                 No matching commands.
               </p>
             )}
           </div>
-        </div>
-      </div>
+          </ScrollArea>
+          </Tabs>
+        </CardContent>
+      </Card>
     </aside>
   )
 }
@@ -1531,87 +2029,101 @@ function TerminalInspector({
 }) {
   return (
     <aside
-      className="hud-panel min-h-0 rounded-lg p-3 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      className="min-h-0 rounded-lg lg:h-full"
       data-inspector-open="true"
     >
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
-        <div className="flex items-center gap-2">
-          <Activity className={cn("size-4", themeConfig.text)} />
-          <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-100 uppercase">
-            inspector
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label="Close inspector"
-          title="Close inspector"
-          onClick={() => onOpenChange(false)}
-          className="rounded-md border border-white/10 bg-white/[0.035] text-slate-400 hover:border-cyan-300/35 hover:text-cyan-100"
-        >
-          <ChevronRight data-icon="inline-start" />
-        </Button>
-      </div>
-
-      <div className="mt-3 grid gap-2">
-        <StatusRow icon={ShieldCheck} label="route" value={route.path} />
-        <StatusRow icon={Clock} label="clock" value={clock} />
-        <StatusRow icon={Cpu} label="latency" value={`${latency}ms`} />
-        <StatusRow icon={Zap} label="uptime" value={`${uptime}s`} />
-        <StatusRow
-          icon={Sparkles}
-          label="eggs"
-          value={`${unlockedEggs.length}/${eggHints.length}`}
-        />
-      </div>
-
-      <div className="mt-4 border border-white/10 bg-black/20 p-3">
-        <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-          theme
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {(["cyan", "amber", "violet"] as TerminalTheme[]).map((item) => (
-            <button
-              key={item}
+      <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
+        <CardHeader className="px-3 py-3">
+          <div className="flex items-center gap-2">
+            <Activity className={cn("size-4", themeConfig.text)} />
+            <CardTitle className="font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase">
+              inspector
+            </CardTitle>
+          </div>
+          <CardAction>
+            <Button
               type="button"
-              data-active={theme === item}
-              data-terminal-theme={item}
-              onClick={() => setTheme(item)}
-              className={cn(
-                "border px-2 py-2 font-mono text-[10px] uppercase transition",
-                theme === item
-                  ? cn(terminalThemes[item].border, terminalThemes[item].soft)
-                  : "border-white/10 bg-white/[0.035] text-slate-400 hover:text-slate-100"
-              )}
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Close inspector"
+              title="Close inspector"
+              onClick={() => onOpenChange(false)}
+              className="rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-400 hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
             >
-              {terminalThemes[item].label}
-            </button>
-          ))}
-        </div>
-      </div>
+              <ChevronRight data-icon="inline-start" />
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <Separator className="bg-[var(--shell-line)]" />
+        <CardContent className="min-h-0 flex-1 px-3 py-3">
+          <ScrollArea className="h-full pr-2">
+            <div className="grid gap-2">
+              <StatusRow icon={ShieldCheck} label="route" value={route.path} />
+              <StatusRow icon={Clock} label="clock" value={clock} />
+              <StatusRow icon={Cpu} label="latency" value={`${latency}ms`} />
+              <StatusRow icon={Zap} label="uptime" value={`${uptime}s`} />
+              <StatusRow
+                icon={Sparkles}
+                label="eggs"
+                value={`${unlockedEggs.length}/${eggHints.length}`}
+              />
+            </div>
 
-      <div className="mt-4 border border-white/10 bg-black/20 p-3">
-        <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-          recent commands
-        </p>
-        <div className="mt-3 grid gap-2">
-          {history.slice(-6).length ? (
-            history.slice(-6).map((item, index) => (
-              <p
-                key={`${item}-${index}`}
-                className="break-words font-mono text-[11px] leading-5 text-slate-300"
-              >
-                <span className={themeConfig.text}>$</span> {item}
-              </p>
-            ))
-          ) : (
-            <p className="font-mono text-[11px] text-slate-500">
-              No commands yet.
-            </p>
-          )}
-        </div>
-      </div>
+            <Card size="sm" className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+                  theme
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                <Tabs
+                  value={theme}
+                  onValueChange={(value) => setTheme(value as TerminalTheme)}
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel)]">
+                    {(["cyan", "amber", "violet"] as TerminalTheme[]).map((item) => (
+                      <TabsTrigger
+                        key={item}
+                        value={item}
+                        data-terminal-theme={item}
+                        className="rounded-none px-2 py-2 font-mono text-[10px] uppercase"
+                      >
+                        {terminalThemes[item].label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            <Card size="sm" className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+                  recent commands
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                <div className="grid gap-2">
+                  {history.slice(-6).length ? (
+                    history.slice(-6).map((item, index) => (
+                      <p
+                        key={`${item}-${index}`}
+                        className="break-words font-mono text-[11px] leading-5 text-slate-300"
+                      >
+                        <span className={themeConfig.text}>$</span> {item}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="font-mono text-[11px] text-slate-500">
+                      No commands yet.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </aside>
   )
 }
@@ -1625,8 +2137,8 @@ function EntryBlock({
 }) {
   return (
     <div className="mb-5 font-mono">
-      <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-[0.16em] uppercase">
-        <span className="text-slate-600">{entry.time}</span>
+      <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-[0.16em]">
+        <span className="text-slate-600 uppercase">{entry.time}</span>
         {entry.command ? (
           <span className={themeConfig.text}>&gt; {entry.command}</span>
         ) : null}
@@ -1637,7 +2149,7 @@ function EntryBlock({
             "mt-2 text-sm leading-7 break-words whitespace-pre-wrap",
             entry.variant === "error" && "text-rose-200",
             entry.variant === "success" && "text-emerald-100",
-            entry.variant === "system" && "text-cyan-100",
+            entry.variant === "system" && "text-[var(--shell-accent-text)]",
             entry.variant === "egg" && "text-yellow-100",
             !entry.variant && "text-slate-300"
           )}
@@ -1723,20 +2235,23 @@ function HomeOutput({
         {routeItems
           .filter((item) => item.href !== "/")
           .map((item) => (
-            <button
+            <Button
               key={item.href}
               type="button"
+              variant="ghost"
               data-terminal-home-route={item.href}
               onClick={() => onNavigate(item.href, item.command)}
-              className="border border-white/10 bg-white/[0.035] px-3 py-3 text-left transition hover:border-cyan-300/35 hover:text-cyan-100"
+              className="h-auto justify-start rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-3 py-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
             >
-              <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-                open
+              <span>
+                <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+                  cd
+                </span>
+                <span className="mt-1 block font-heading text-lg text-slate-50">
+                  {item.label}
+                </span>
               </span>
-              <span className="mt-1 block font-heading text-lg text-slate-50">
-                {item.label}
-              </span>
-            </button>
+            </Button>
           ))}
       </div>
     </TerminalSection>
@@ -1762,20 +2277,25 @@ function AboutOutput() {
         <TerminalSubheading>experience</TerminalSubheading>
         <div className="mt-3 grid gap-3">
           {about.experiences.map((experience) => (
-            <div
+            <Card
               key={`${experience.company}-${experience.title}`}
-              className="border border-white/10 bg-black/22 p-4"
+              size="sm"
+              className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4"
             >
-              <p className="font-heading text-lg text-slate-50">
-                {experience.title}
-              </p>
-              <p className="mt-1 font-mono text-[11px] tracking-[0.14em] text-cyan-100 uppercase">
-                {experience.company} / {experience.period}
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                {experience.description}
-              </p>
-            </div>
+              <CardHeader className="px-4">
+                <CardTitle className="text-lg text-slate-50">
+                  {experience.title}
+                </CardTitle>
+                <Badge variant="outline" className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase">
+                  {experience.company} / {experience.period}
+                </Badge>
+              </CardHeader>
+              <CardContent className="px-4">
+                <p className="text-sm leading-7 text-slate-300">
+                  {experience.description}
+                </p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -1783,12 +2303,13 @@ function AboutOutput() {
         <TerminalSubheading>technical stack</TerminalSubheading>
         <div className="mt-3 flex flex-wrap gap-2">
           {about.techSkills.map((skill) => (
-            <span
+            <Badge
               key={skill.name}
-              className="border border-white/10 bg-white/[0.035] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
+              variant="outline"
+              className="h-auto rounded-none border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
             >
               {skill.name} / lvl {skill.level}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
@@ -1810,7 +2331,7 @@ function ProjectList({
       <TerminalLines
         lines={[
           `${projectItems.length} projects available.`,
-          "Select a row to open its case study at /projects/<slug>.",
+          "Select a row to inspect its case study at /projects/<slug>.",
         ]}
       />
       <div className="mt-5 grid gap-2">
@@ -1822,11 +2343,11 @@ function ProjectList({
             onClick={() =>
               onNavigate(`/projects/${project.slug}`, `project ${project.slug}`)
             }
-            className="grid gap-3 border border-white/10 bg-white/[0.03] p-3 text-left transition hover:border-cyan-300/35 hover:bg-cyan-300/[0.055] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
+            className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
-            <span className="font-mono text-[11px] text-cyan-100">
+            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]">
               {project.projectId}
-            </span>
+            </Badge>
             <span className="min-w-0">
               <span className="block font-heading text-base text-slate-50">
                 {project.title}
@@ -1836,18 +2357,19 @@ function ProjectList({
               </span>
               <span className="mt-2 flex flex-wrap gap-1.5">
                 {project.stack.slice(0, 5).map((item) => (
-                  <span
+                  <Badge
                     key={item}
-                    className="border border-white/10 px-1.5 py-1 font-mono text-[9px] tracking-[0.1em] text-slate-500 uppercase"
+                    variant="outline"
+                    className="h-auto rounded-none border-[color:var(--shell-border)] px-1.5 py-1 font-mono text-[9px] tracking-[0.1em] text-slate-500 uppercase"
                   >
                     {item}
-                  </span>
+                  </Badge>
                 ))}
               </span>
             </span>
-            <span className="font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
+            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
               {project.category}
-            </span>
+            </Badge>
           </button>
         ))}
       </div>
@@ -1902,19 +2424,20 @@ function ProjectDetailOutput({
         />
       </div>
       <div className="mt-6 flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => onNavigate("/projects", "projects")}
-          className="border border-cyan-300/30 bg-cyan-300/[0.08] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-cyan-100 uppercase"
+          className="rounded-none border-[color:var(--shell-border-strong)] bg-[var(--shell-accent-soft)] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase"
         >
           back to projects
-        </button>
+        </Button>
         {project.githubLink ? (
           <a
             href={project.githubLink}
             target="_blank"
             rel="noreferrer"
-            className="border border-white/10 bg-white/[0.035] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:text-cyan-100"
+            className="inline-flex h-8 items-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:text-[var(--shell-accent-text)]"
           >
             github
           </a>
@@ -1924,7 +2447,7 @@ function ProjectDetailOutput({
             href={project.liveLink}
             target="_blank"
             rel="noreferrer"
-            className="border border-white/10 bg-white/[0.035] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:text-cyan-100"
+            className="inline-flex h-8 items-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:text-[var(--shell-accent-text)]"
           >
             live
           </a>
@@ -1944,7 +2467,7 @@ function BlogOutput({
       <TerminalLines
         lines={[
           `${researchLogs.length} notes available.`,
-          "Select a note to open it at /blog/<slug>.",
+          "Select a note to inspect it at /blog/<slug>.",
         ]}
       />
       <div className="mt-5 grid gap-2">
@@ -1954,11 +2477,11 @@ function BlogOutput({
             type="button"
             data-log-slug={log.slug}
             onClick={() => onNavigate(`/blog/${log.slug}`, `note ${log.title}`)}
-            className="grid gap-3 border border-white/10 bg-white/[0.03] p-3 text-left transition hover:border-cyan-300/35 hover:bg-cyan-300/[0.055] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
+            className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
-            <span className="font-mono text-[11px] text-cyan-100">
+            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]">
               {log.number}
-            </span>
+            </Badge>
             <span>
               <span className="block font-heading text-base text-slate-50">
                 {log.title}
@@ -1967,9 +2490,9 @@ function BlogOutput({
                 {log.excerpt}
               </span>
             </span>
-            <span className="font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
+            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
               {log.readingTime}
-            </span>
+            </Badge>
           </button>
         ))}
       </div>
@@ -2006,25 +2529,29 @@ function BlogDetailOutput({
       />
       <div className="mt-4 flex flex-wrap gap-2">
         {log.tags.map((tag) => (
-          <span
+          <Badge
             key={tag}
-            className="border border-white/10 bg-white/[0.035] px-2 py-1 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
+            variant="outline"
+            className="h-auto rounded-none border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2 py-1 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
           >
             {tag}
-          </span>
+          </Badge>
         ))}
       </div>
-      <div className="mt-6 border border-white/10 bg-black/18 p-4">
+      <Card size="sm" className="mt-6 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+        <CardContent className="px-4">
         <TerminalSubheading>reading view</TerminalSubheading>
         <div className="mt-2 max-w-none font-sans">{articleContent}</div>
-      </div>
-      <button
+        </CardContent>
+      </Card>
+      <Button
         type="button"
+        variant="outline"
         onClick={() => onNavigate("/blog", "blog")}
-        className="mt-5 border border-cyan-300/30 bg-cyan-300/[0.08] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-cyan-100 uppercase"
+        className="mt-5 rounded-none border-[color:var(--shell-border-strong)] bg-[var(--shell-accent-soft)] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase"
       >
         back to notes
-      </button>
+      </Button>
     </TerminalSection>
   )
 }
@@ -2050,12 +2577,13 @@ function SkillOutput() {
     <TerminalSection icon={Code2} label="skills" title="Stack map">
       <div className="flex flex-wrap gap-2">
         {skills.map((skill) => (
-          <span
+          <Badge
             key={skill}
-            className="border border-white/10 bg-white/[0.035] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
+            variant="outline"
+            className="h-auto rounded-none border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-300 uppercase"
           >
             {skill}
-          </span>
+          </Badge>
         ))}
       </div>
     </TerminalSection>
@@ -2067,25 +2595,28 @@ function ArchitectureOutput() {
     <TerminalSection icon={Braces} label="architecture" title="System layers">
       <div className="grid gap-3">
         {architectureLayers.map((layer) => (
-          <div key={layer.id} className="border border-white/10 bg-black/22 p-4">
-            <p className="font-heading text-lg text-slate-50">{layer.label}</p>
-            <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-cyan-100 uppercase">
-              {layer.category} / {layer.flow.join(" -> ")}
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              {layer.role}
-            </p>
+          <Card key={layer.id} size="sm" className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+            <CardHeader className="px-4">
+              <CardTitle className="text-lg text-slate-50">{layer.label}</CardTitle>
+              <Badge variant="outline" className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase">
+                {layer.category} / {layer.flow.join(" -> ")}
+              </Badge>
+            </CardHeader>
+            <CardContent className="px-4">
+            <p className="text-sm leading-7 text-slate-300">{layer.role}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {layer.stacks.map((stack) => (
-                <span
+                <Badge
                   key={stack}
-                  className="border border-white/10 px-2 py-1 font-mono text-[10px] text-slate-400"
+                  variant="outline"
+                  className="h-auto rounded-none border-[color:var(--shell-border)] px-2 py-1 font-mono text-[10px] text-slate-400"
                 >
                   {stack}
-                </span>
+                </Badge>
               ))}
             </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </TerminalSection>
@@ -2104,20 +2635,23 @@ function TerminalSection({
   title: string
 }) {
   return (
-    <section className="border border-white/10 bg-white/[0.025] p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-4">
+    <Card className="gap-0 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100">
+      <CardHeader className="px-4 py-4 sm:px-5">
         <div>
-          <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-200 uppercase">
+          <Badge variant="outline" className="h-auto rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase">
             {label}
-          </p>
-          <h1 className="mt-2 font-heading text-2xl font-semibold text-slate-50 sm:text-3xl">
+          </Badge>
+          <CardTitle className="mt-2 text-2xl font-semibold text-slate-50 sm:text-3xl">
             {title}
-          </h1>
+          </CardTitle>
         </div>
-        <Icon className="size-5 text-cyan-200" />
-      </div>
-      <div className="mt-5">{children}</div>
-    </section>
+        <CardAction>
+          <Icon className="size-5 text-[var(--shell-accent-text)]" />
+        </CardAction>
+      </CardHeader>
+      <Separator className="bg-[var(--shell-line)]" />
+      <CardContent className="px-4 py-5 sm:px-5">{children}</CardContent>
+    </Card>
   )
 }
 
@@ -2131,7 +2665,7 @@ function TerminalLines({ lines }: { lines: string[] }) {
 
 function TerminalSubheading({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-200 uppercase">
+    <p className="font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase">
       {children}
     </p>
   )
@@ -2139,34 +2673,42 @@ function TerminalSubheading({ children }: { children: ReactNode }) {
 
 function DetailBlock({ text, title }: { text: string; title: string }) {
   return (
-    <div className="border border-white/10 bg-black/20 p-4">
-      <TerminalSubheading>{title}</TerminalSubheading>
-      <p className="mt-3 text-sm leading-7 text-slate-300">{text}</p>
-    </div>
+    <Card size="sm" className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+      <CardHeader className="px-4">
+        <TerminalSubheading>{title}</TerminalSubheading>
+      </CardHeader>
+      <CardContent className="px-4">
+        <p className="text-sm leading-7 text-slate-300">{text}</p>
+      </CardContent>
+    </Card>
   )
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-black/22 p-3">
+    <Card size="sm" className="gap-1 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+      <CardContent className="px-3">
       <p className="font-heading text-2xl font-semibold text-slate-50">
         {value}
       </p>
       <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
         {label}
       </p>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
 function Telemetry({ label, value }: { label: string; value: string }) {
   return (
-    <div className="hidden border border-white/10 bg-white/[0.035] px-3 py-2 font-mono sm:block">
+    <Card size="sm" className="hidden gap-0 rounded-none border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-2 font-mono sm:block">
+      <CardContent className="px-3">
       <p className="text-[9px] tracking-[0.16em] text-slate-600 uppercase">
         {label}
       </p>
-      <p className="mt-1 text-[11px] text-cyan-100">{value}</p>
-    </div>
+      <p className="mt-1 text-[11px] text-[var(--shell-accent-text)]">{value}</p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -2180,17 +2722,19 @@ function StatusRow({
   value: string
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border border-white/10 bg-white/[0.035] p-3">
+    <Card size="sm" className="gap-0 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+      <CardContent className="flex items-center justify-between gap-3 px-3">
       <div className="flex min-w-0 items-center gap-2">
-        <Icon className="size-4 shrink-0 text-cyan-200" />
+        <Icon className="size-4 shrink-0 text-[var(--shell-accent-text)]" />
         <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
           {label}
         </span>
       </div>
-      <span className="min-w-0 truncate text-right font-mono text-[11px] text-slate-200">
+      <Badge variant="outline" className="min-w-0 truncate rounded-none border-[color:var(--shell-border)] text-right font-mono text-[11px] text-slate-200">
         {value}
-      </span>
-    </div>
+      </Badge>
+      </CardContent>
+    </Card>
   )
 }
 

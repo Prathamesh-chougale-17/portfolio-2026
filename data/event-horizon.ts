@@ -265,25 +265,46 @@ function projectType(categories: PortfolioProject["categories"]) {
   return "Full-stack Product System"
 }
 
+function projectDisplayTitle(title: string) {
+  if (title === "Classic Portfolio Template") {
+    return "Classic Developer Site Template"
+  }
+
+  if (title === "Modern Portfolio Template") {
+    return "Modern Developer Site Template"
+  }
+
+  return title
+}
+
+function projectDisplayDescription(description: string) {
+  return description
+    .replace("classic portfolio website template", "classic developer website template")
+    .replace("modern portfolio website template", "modern developer website template")
+    .replace("showcase your projects and skills", "present projects and skills")
+}
+
 export const projects: PortfolioProject[] = en.projects.map((project, index) => {
   const categories = classify(project.tags, project.title)
   const category = categories.includes("Full-stack")
     ? "Full-stack"
     : categories[0]
   const stack = project.tags
-  const slug = slugify(project.title)
+  const title = projectDisplayTitle(project.title)
+  const description = projectDisplayDescription(project.description)
+  const slug = slugify(title)
 
   return {
     slug,
-    title: project.title,
+    title,
     type: projectType(categories),
     category,
     categories,
     stack,
-    description: project.description,
-    problem: `Build ${project.title} as a reliable product system with clear user flows, durable data boundaries, and a deployable architecture.`,
+    description,
+    problem: `Build ${title} as a reliable product system with clear user flows, durable data boundaries, and a deployable architecture.`,
     role: "Product engineer, system designer, full-stack implementer, and deployment owner.",
-    architecture: `${project.title} is modeled as a layered system: interface surface, API boundary, application services, data persistence, observability hooks, and release pipeline.`,
+    architecture: `${title} is modeled as a layered system: interface surface, API boundary, application services, data persistence, observability hooks, and release pipeline.`,
     backendDecisions: [
       "Keep validation close to the API boundary before data reaches business logic.",
       "Separate user-facing workflows from persistence and integration concerns.",
@@ -376,7 +397,7 @@ export const researchLogs: ResearchLog[] = [
     category: "PowerShell-Inspired Interfaces",
     date: "2026-02-10",
     readingTime: "6 min read",
-    tags: ["Portfolio", "Next.js", "Motion"],
+    tags: ["Workspace", "Next.js", "Motion"],
     excerpt:
       "A build note for PWSH Studio, from data modeling to interactive PowerShell-style navigation.",
   },
