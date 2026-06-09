@@ -32,12 +32,18 @@ import {
   type ContactPayload,
 } from "@/lib/contact"
 import { cn } from "@/lib/utils"
+import type { langtype } from "@/types/lang"
 
 type SuccessState = {
   requestId: string
 }
 
-export function TerminalContactForm() {
+export function TerminalContactForm({
+  languageData,
+}: {
+  languageData?: langtype
+}) {
+  const formCopy = languageData?.contact.form
   const [success, setSuccess] = useState<SuccessState | null>(null)
   const [serverError, setServerError] = useState("")
   const {
@@ -87,7 +93,7 @@ export function TerminalContactForm() {
           <div className="flex items-center gap-3">
             <ShieldCheck className="size-5 text-emerald-200" />
             <CardTitle className="text-xs tracking-[0.18em] text-emerald-100 uppercase">
-              message delivered
+              {formCopy?.success ?? "message delivered"}
             </CardTitle>
           </div>
         </CardHeader>
@@ -104,7 +110,7 @@ export function TerminalContactForm() {
             onClick={() => setSuccess(null)}
             className="mt-5 rounded-none border-emerald-300/35 bg-emerald-300/10 font-mono text-[10px] tracking-[0.16em] text-emerald-100 uppercase hover:bg-emerald-300/15"
           >
-            send another message
+            {formCopy?.submit ?? "send another message"}
           </Button>
         </CardContent>
       </Card>
@@ -121,7 +127,8 @@ export function TerminalContactForm() {
                 /contact/message
               </CardTitle>
               <p className="mt-1 text-[11px] text-slate-500">
-                validated on submit and delivered through /api/contact
+                {formCopy?.title ??
+                  "validated on submit and delivered through /api/contact"}
               </p>
             </div>
             <Badge
@@ -143,28 +150,40 @@ export function TerminalContactForm() {
           />
 
           <FieldGroup className="grid gap-4 sm:grid-cols-2">
-            <TerminalField label="name" error={errors.name?.message}>
+            <TerminalField
+              label={formCopy?.name.label ?? "name"}
+              error={errors.name?.message}
+            >
               <Input
                 {...register("name")}
                 aria-invalid={Boolean(errors.name)}
-                placeholder="Your name"
+                placeholder={formCopy?.name.placeholder ?? "Your name"}
                 className={fieldClass}
               />
             </TerminalField>
-            <TerminalField label="email" error={errors.email?.message}>
+            <TerminalField
+              label={formCopy?.email.label ?? "email"}
+              error={errors.email?.message}
+            >
               <Input
                 {...register("email")}
                 aria-invalid={Boolean(errors.email)}
                 type="email"
-                placeholder="you@example.com"
+                placeholder={formCopy?.email.placeholder ?? "you@example.com"}
                 className={fieldClass}
               />
             </TerminalField>
-            <TerminalField label="subject" error={errors.subject?.message}>
+            <TerminalField
+              label={formCopy?.subject.label ?? "subject"}
+              error={errors.subject?.message}
+            >
               <Input
                 {...register("subject")}
                 aria-invalid={Boolean(errors.subject)}
-                placeholder="Backend system, chain product, collaboration"
+                placeholder={
+                  formCopy?.subject.placeholder ??
+                  "Backend system, chain product, collaboration"
+                }
                 className={fieldClass}
               />
             </TerminalField>
@@ -232,7 +251,7 @@ export function TerminalContactForm() {
               />
             </TerminalField>
             <TerminalField
-              label="message"
+              label={formCopy?.message.label ?? "message"}
               error={errors.message?.message}
               className="sm:col-span-2"
             >
@@ -240,7 +259,10 @@ export function TerminalContactForm() {
                 {...register("message")}
                 aria-invalid={Boolean(errors.message)}
                 rows={6}
-                placeholder="Project idea, constraints, stack, timeline, and what success should look like."
+                placeholder={
+                  formCopy?.message.placeholder ??
+                  "Project idea, constraints, stack, timeline, and what success should look like."
+                }
                 className={cn(fieldClass, "min-h-36 resize-y")}
               />
             </TerminalField>
@@ -262,7 +284,7 @@ export function TerminalContactForm() {
             ) : (
               <Send className="size-4" />
             )}
-            send message
+            {formCopy?.submit ?? "send message"}
           </Button>
         </CardContent>
       </Card>

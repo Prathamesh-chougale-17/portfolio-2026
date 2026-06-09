@@ -56,7 +56,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  about,
   architectureLayers,
   getProject,
   getResearchLog,
@@ -68,7 +67,11 @@ import {
   type PortfolioProject,
   type ResearchLog,
 } from "@/data/event-horizon"
+import { en } from "@/data/en"
+import { hi } from "@/data/hi"
+import { mr } from "@/data/mr"
 import { cn } from "@/lib/utils"
+import type { langtype } from "@/types/lang"
 
 export type TerminalView =
   | "home"
@@ -121,11 +124,13 @@ type RouteState = {
 }
 
 type TerminalTheme = "cyan" | "amber" | "violet"
+type TerminalLanguage = "en" | "hi" | "mr"
 
 type TerminalSessionState = {
   entries: Entry[]
   hasStarted: boolean
   history: string[]
+  language: TerminalLanguage
   lastRouteKey?: string
   matrixMode: boolean
   pendingScrollEntryId?: string
@@ -148,20 +153,30 @@ type ShellThemeConfig = {
 
 const INITIAL_STAMP = "--:--:--"
 const PENDING_COMMAND_KEY = "pwsh-studio-pending-command"
+const LANGUAGE_STORAGE_KEY = "pwsh-studio-language"
 const SIDEBAR_STORAGE_KEY = "pwsh-studio-sidebar-open"
 const THEME_STORAGE_KEY = "pwsh-studio-theme"
 let rememberedInspectorOpen = false
 let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
+let rememberedTerminalLanguage: TerminalLanguage = "en"
 const terminalSession: TerminalSessionState = {
   entries: [],
   hasStarted: false,
   history: [],
+  language: "en",
   matrixMode: false,
   shouldPrimeOutputToEnd: false,
   unlockedEggs: [],
   uptime: 0,
   workbenchOpen: false,
+}
+
+const languagePacks: Record<TerminalLanguage, langtype> = { en, hi, mr }
+const languageLabels: Record<TerminalLanguage, string> = {
+  en: "English",
+  hi: "Hindi",
+  mr: "Marathi",
 }
 
 const routeItems = [
@@ -228,6 +243,9 @@ const commandList = [
   "notes",
   "note ",
   "contact",
+  "lang en",
+  "lang hi",
+  "lang mr",
   "cd /",
   "cd /about",
   "cd /projects",
@@ -364,11 +382,37 @@ function isTerminalTheme(value: string | null): value is TerminalTheme {
   return value === "cyan" || value === "amber" || value === "violet"
 }
 
+function isTerminalLanguage(value: string | null): value is TerminalLanguage {
+  return value === "en" || value === "hi" || value === "mr"
+}
+
+function resolveLanguage(value: string) {
+  const normalized = value.trim().toLowerCase()
+  const aliases: Record<string, TerminalLanguage> = {
+    en: "en",
+    english: "en",
+    hi: "hi",
+    hindi: "hi",
+    mr: "mr",
+    marathi: "mr",
+  }
+
+  return aliases[normalized] ?? null
+}
+
 function storeTerminalTheme(value: TerminalTheme) {
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, value)
   } catch {
     // Theme persistence is a preference; the terminal still works without it.
+  }
+}
+
+function storeTerminalLanguage(value: TerminalLanguage) {
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, value)
+  } catch {
+    // Language persistence is a preference; English remains the fallback.
   }
 }
 
@@ -549,6 +593,26 @@ function findResearchLog(query: string) {
   )
 }
 
+function localizedRouteLabel(
+  languageData: langtype,
+  href: string,
+  fallback: string
+) {
+  return (
+    languageData.navItems.find((item) => item.href === href)?.title ?? fallback
+  )
+}
+
+function localizedProject(project: PortfolioProject, languageData: langtype) {
+  const index = projects.findIndex((item) => item.slug === project.slug)
+  const localized = index >= 0 ? languageData.projects[index] : undefined
+
+  return {
+    description: localized?.description ?? project.description,
+    title: localized?.title ?? project.title,
+  }
+}
+
 function resolveLocationTarget(rawTarget: string, currentPath: string) {
   const target = rawTarget.trim()
 
@@ -649,12 +713,12 @@ function workspaceTreeGraph() {
   ]
 }
 
-function profileJson() {
+function profileJson(languageData: langtype) {
   return JSON.stringify(
     {
-      name: profile.name,
-      role: profile.role,
-      focus: profile.tagline,
+      name: languageData.hero.name,
+      role: languageData.hero.title,
+      focus: languageData.hero.description,
       workspace: "PWSH Studio",
       skills: skills.slice(0, 10),
     },
@@ -713,7 +777,7 @@ function commandIndexLines() {
     "Actions",
     "  contact, curl /api/contact, ping pwsh-core",
     "Preferences",
-    "  theme cyan|amber|violet",
+    "  theme cyan|amber|violet, lang en|hi|mr",
     "Extras",
     "  ./matrix, pkill matrix, make coffee, base64 -d state.txt, sudo ./ship-it, xdg-open workbench",
   ]
@@ -796,6 +860,9 @@ export function TerminalPortfolioApp({
   const [theme, setTheme] = useState<TerminalTheme>(
     () => rememberedTerminalTheme
   )
+  const [language, setLanguage] = useState<TerminalLanguage>(
+    () => rememberedTerminalLanguage
+  )
   const [matrixMode, setMatrixMode] = useState(
     () => terminalSession.matrixMode
   )
@@ -806,6 +873,7 @@ export function TerminalPortfolioApp({
     () => terminalSession.unlockedEggs
   )
   const themeConfig = terminalThemes[theme]
+  const languageData = languagePacks[language]
 
   const routeState = useMemo(
     () => resolveRoute(pathname, initialView, selectedSlug),
@@ -838,6 +906,23 @@ export function TerminalPortfolioApp({
     }, 0)
 
     return () => window.clearTimeout(restoreTheme)
+  }, [])
+
+  useEffect(() => {
+    const restoreLanguage = window.setTimeout(() => {
+      try {
+        const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+        if (isTerminalLanguage(storedLanguage)) {
+          rememberedTerminalLanguage = storedLanguage
+          terminalSession.language = storedLanguage
+          setLanguage(storedLanguage)
+        }
+      } catch {
+        // Ignore blocked storage; English remains the fallback language.
+      }
+    }, 0)
+
+    return () => window.clearTimeout(restoreLanguage)
   }, [])
 
   useEffect(() => {
@@ -898,6 +983,13 @@ export function TerminalPortfolioApp({
     rememberedTerminalTheme = nextTheme
     setTheme(nextTheme)
     storeTerminalTheme(nextTheme)
+  }
+
+  function applyLanguage(nextLanguage: TerminalLanguage) {
+    rememberedTerminalLanguage = nextLanguage
+    terminalSession.language = nextLanguage
+    setLanguage(nextLanguage)
+    storeTerminalLanguage(nextLanguage)
   }
 
   function applySidebarOpen(nextValue: boolean) {
@@ -1217,6 +1309,34 @@ export function TerminalPortfolioApp({
       return
     }
 
+    if (
+      normalized.startsWith("lang ") ||
+      normalized.startsWith("language ") ||
+      normalized.startsWith("locale ")
+    ) {
+      const nextLanguage = resolveLanguage(
+        command.replace(/^(lang|language|locale)\s+/i, "")
+      )
+      if (!nextLanguage) {
+        appendEntry({
+          command,
+          lines: [
+            "Language not found. Available: en, hi, mr.",
+            "Aliases: english, hindi, marathi.",
+          ],
+          variant: "error",
+        })
+        return
+      }
+      applyLanguage(nextLanguage)
+      appendEntry({
+        command,
+        lines: [`Language set to ${languageLabels[nextLanguage]}.`],
+        variant: "success",
+      })
+      return
+    }
+
     switch (normalized) {
       case "help":
       case "get-help":
@@ -1230,6 +1350,7 @@ export function TerminalPortfolioApp({
             "Linux: ls, tree, pwd, cat <file>, grep <query>, find projects -name <query>.",
             "Data: whoami, status, skills, architecture, projects --backend, projects --blockchain.",
             "Shell: ps, uname -a, env, ping pwsh-core, curl /api/contact.",
+            "Language: lang en, lang hi, lang mr.",
             "Extras: easter-eggs for hidden commands.",
           ],
         })
@@ -1248,7 +1369,7 @@ export function TerminalPortfolioApp({
           command,
           lines: [
             "Linux pwsh-studio 6.9.0-terminal x86_64 GNU/Linux",
-            `${profile.name} / ${profile.role}`,
+            `${languageData.hero.name} / ${languageData.hero.title}`,
           ],
           variant: "success",
         })
@@ -1257,8 +1378,8 @@ export function TerminalPortfolioApp({
         appendEntry({
           command,
           lines: [
-            `${profile.name} / ${profile.role}`,
-            profile.heroCopy,
+            `${languageData.hero.name} / ${languageData.hero.title}`,
+            languageData.hero.description,
             profile.alternativeHeroLine,
           ],
           variant: "success",
@@ -1375,7 +1496,7 @@ export function TerminalPortfolioApp({
       case "get-content profile.json":
         appendEntry({
           command,
-          lines: [profileJson()],
+          lines: [profileJson(languageData)],
           variant: "success",
         })
         return
@@ -1418,6 +1539,7 @@ export function TerminalPortfolioApp({
             `PWD=${routeState.path}`,
             `USER=${profile.name.split(" ")[0].toLowerCase()}`,
             `THEME=${theme}`,
+            `LANG=${language}`,
             "APP=PWSH Studio",
           ],
         })
@@ -1691,15 +1813,16 @@ export function TerminalPortfolioApp({
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,var(--shell-accent-soft),transparent_28rem),linear-gradient(180deg,var(--shell-page),var(--shell-bg)_48%,var(--shell-page))] opacity-80" />
       <div className="hud-grid pointer-events-none fixed inset-0 [mask-image:linear-gradient(to_bottom,black,transparent_90%)] opacity-20" />
       <div className="relative z-10 mx-auto flex min-h-svh w-full max-w-[1680px] flex-col p-3 sm:p-4 lg:h-svh lg:min-h-0">
-        <TerminalHeader
-          activeLog={activeLog}
-          activeProject={activeProject}
-          clock={clock}
-          inspectorOpen={inspectorOpen}
-          latency={latency}
-          onInspectorOpenChange={applyInspectorOpen}
-          route={routeState}
-          themeConfig={themeConfig}
+          <TerminalHeader
+            activeLog={activeLog}
+            activeProject={activeProject}
+            clock={clock}
+            inspectorOpen={inspectorOpen}
+            latency={latency}
+            languageData={languageData}
+            onInspectorOpenChange={applyInspectorOpen}
+            route={routeState}
+            themeConfig={themeConfig}
         />
 
         <div
@@ -1721,6 +1844,7 @@ export function TerminalPortfolioApp({
         >
           <TerminalQuickAccess
             activePath={routeState.path}
+            languageData={languageData}
             open={sidebarOpen}
             onCommand={runCommand}
             onOpenChange={applySidebarOpen}
@@ -1776,6 +1900,7 @@ export function TerminalPortfolioApp({
                 <EntryBlock
                   entry={entry}
                   key={entry.id}
+                  languageData={languageData}
                   onNavigate={navigateTo}
                   themeConfig={themeConfig}
                 />
@@ -1836,7 +1961,9 @@ export function TerminalPortfolioApp({
             <TerminalInspector
               clock={clock}
               history={history}
+              language={language}
               latency={latency}
+              setLanguage={applyLanguage}
               onOpenChange={applyInspectorOpen}
               route={routeState}
               setTheme={applyTheme}
@@ -1857,6 +1984,7 @@ function TerminalHeader({
   activeProject,
   clock,
   inspectorOpen,
+  languageData,
   latency,
   onInspectorOpenChange,
   route,
@@ -1866,6 +1994,7 @@ function TerminalHeader({
   activeProject?: PortfolioProject
   clock: string
   inspectorOpen: boolean
+  languageData: langtype
   latency: number
   onInspectorOpenChange: (open: boolean) => void
   route: RouteState
@@ -1875,6 +2004,9 @@ function TerminalHeader({
   const linkedin = profile.socials.find((link) => link.label === "LinkedIn")
   const GitHubIcon = Icons.gitHub
   const LinkedInIcon = Icons.linkedin
+  const localizedActiveProject = activeProject
+    ? localizedProject(activeProject, languageData).title
+    : undefined
 
   return (
     <header className="mb-3 shrink-0">
@@ -1896,7 +2028,7 @@ function TerminalHeader({
                   PWSH Studio
                 </p>
                 <p className="mt-1 truncate font-mono text-[10px] tracking-[0.18em] text-slate-500 uppercase">
-                  {activeProject?.title ??
+                  {localizedActiveProject ??
                     activeLog?.title ??
                     "developer workspace"}{" "}
                   / {route.path}
@@ -1953,6 +2085,7 @@ function TerminalHeader({
 
 function TerminalQuickAccess({
   activePath,
+  languageData,
   open,
   onCommand,
   onOpenChange,
@@ -1960,6 +2093,7 @@ function TerminalQuickAccess({
   themeConfig,
 }: {
   activePath: string
+  languageData: langtype
   open: boolean
   onCommand: (command: string) => void
   onOpenChange: (open: boolean) => void
@@ -2011,6 +2145,12 @@ function TerminalQuickAccess({
                   ? activePath === "/"
                   : activePath === item.href ||
                     activePath.startsWith(`${item.href}/`)
+              const label = localizedRouteLabel(
+                languageData,
+                item.href,
+                item.label
+              )
+
               return (
                 <Button
                   key={item.href}
@@ -2018,9 +2158,9 @@ function TerminalQuickAccess({
                   variant="ghost"
                   size="icon"
                   aria-current={active ? "page" : undefined}
-                  aria-label={item.label}
+                  aria-label={label}
                   data-terminal-route={item.href}
-                  title={`${item.label} - ${item.meta}`}
+                  title={`${label} - ${item.meta}`}
                   onClick={() => onNavigate(item.href, item.command)}
                   className={cn(
                     "relative rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
@@ -2085,6 +2225,12 @@ function TerminalQuickAccess({
                     ? activePath === "/"
                     : activePath === item.href ||
                       activePath.startsWith(`${item.href}/`)
+                const label = localizedRouteLabel(
+                  languageData,
+                  item.href,
+                  item.label
+                )
+
                 return (
                   <Button
                     key={item.href}
@@ -2112,7 +2258,7 @@ function TerminalQuickAccess({
                       <Icon data-icon="inline-start" />
                       <span className="min-w-0">
                         <span className="block font-mono text-[11px] tracking-[0.14em] uppercase">
-                          {item.label}
+                          {label}
                         </span>
                         <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-500">
                           {item.meta}
@@ -2208,9 +2354,11 @@ function TerminalQuickAccess({
 function TerminalInspector({
   clock,
   history,
+  language,
   latency,
   onOpenChange,
   route,
+  setLanguage,
   setTheme,
   theme,
   themeConfig,
@@ -2219,9 +2367,11 @@ function TerminalInspector({
 }: {
   clock: string
   history: string[]
+  language: TerminalLanguage
   latency: number
   onOpenChange: (open: boolean) => void
   route: RouteState
+  setLanguage: (language: TerminalLanguage) => void
   setTheme: (theme: TerminalTheme) => void
   theme: TerminalTheme
   themeConfig: (typeof terminalThemes)[TerminalTheme]
@@ -2259,6 +2409,11 @@ function TerminalInspector({
               <StatusRow icon={ShieldCheck} label="route" value={route.path} />
               <StatusRow icon={Clock} label="clock" value={clock} />
               <StatusRow icon={Cpu} label="latency" value={`${latency}ms`} />
+              <StatusRow
+                icon={Command}
+                label="language"
+                value={languageLabels[language]}
+              />
               <StatusRow icon={Zap} label="uptime" value={`${uptime}s`} />
               <StatusRow
                 icon={Sparkles}
@@ -2305,6 +2460,37 @@ function TerminalInspector({
             >
               <CardHeader className="px-3">
                 <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+                  language
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                <Tabs
+                  value={language}
+                  onValueChange={(value) =>
+                    setLanguage(value as TerminalLanguage)
+                  }
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel)]">
+                    {(["en", "hi", "mr"] as TerminalLanguage[]).map((item) => (
+                      <TabsTrigger
+                        key={item}
+                        value={item}
+                        className="rounded-none px-2 py-2 font-mono text-[10px] uppercase"
+                      >
+                        {item}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            <Card
+              size="sm"
+              className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3"
+            >
+              <CardHeader className="px-3">
+                <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
                   recent commands
                 </CardTitle>
               </CardHeader>
@@ -2336,10 +2522,12 @@ function TerminalInspector({
 
 function EntryBlock({
   entry,
+  languageData,
   onNavigate,
   themeConfig,
 }: {
   entry: Entry
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
@@ -2367,7 +2555,11 @@ function EntryBlock({
       ) : null}
       {entry.content ? (
         <div className="mt-3">
-          <EntryContentView content={entry.content} onNavigate={onNavigate} />
+          <EntryContentView
+            content={entry.content}
+            languageData={languageData}
+            onNavigate={onNavigate}
+          />
         </div>
       ) : null}
     </div>
@@ -2376,9 +2568,11 @@ function EntryBlock({
 
 function EntryContentView({
   content,
+  languageData,
   onNavigate,
 }: {
   content: EntryContent
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
 }) {
   switch (content.type) {
@@ -2386,6 +2580,7 @@ function EntryContentView({
       return (
         <RouteOutput
           articleContent={content.articleContent}
+          languageData={languageData}
           onNavigate={onNavigate}
           route={content.route}
         />
@@ -2397,6 +2592,7 @@ function EntryContentView({
     case "project-list":
       return (
         <ProjectList
+          languageData={languageData}
           onNavigate={onNavigate}
           projects={content.projects}
           title={content.title}
@@ -2407,27 +2603,31 @@ function EntryContentView({
 
 function RouteOutput({
   articleContent,
+  languageData,
   onNavigate,
   route,
 }: {
   articleContent?: ReactNode
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
   route: RouteState
 }) {
   switch (route.view) {
     case "about":
-      return <AboutOutput />
+      return <AboutOutput languageData={languageData} />
     case "projects":
       return (
         <ProjectList
+          languageData={languageData}
           onNavigate={onNavigate}
           projects={projects}
-          title="Featured project index"
+          title={languageData.projectsPage.title}
         />
       )
     case "project-detail":
       return (
         <ProjectDetailOutput
+          languageData={languageData}
           onNavigate={onNavigate}
           project={route.selectedSlug ? getProject(route.selectedSlug) : null}
         />
@@ -2443,29 +2643,31 @@ function RouteOutput({
         />
       )
     case "contact":
-      return <ContactOutput />
+      return <ContactOutput languageData={languageData} />
     case "home":
     default:
-      return <HomeOutput onNavigate={onNavigate} />
+      return <HomeOutput languageData={languageData} onNavigate={onNavigate} />
   }
 }
 
 function HomeOutput({
+  languageData,
   onNavigate,
 }: {
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
 }) {
   return (
     <TerminalSection
       icon={Rocket}
       label="home"
-      title="Prathamesh Chougale — PWSH Studio"
+      title={`${languageData.hero.name} - PWSH Studio`}
     >
       <TerminalLines
         lines={[
           ...initSequence,
-          `${profile.name} / ${profile.role}`,
-          profile.heroCopy,
+          `${languageData.hero.name} / ${languageData.hero.title}`,
+          languageData.hero.description,
           "Use the start menu or commands to explore projects, writing, and contact.",
         ]}
       />
@@ -2491,7 +2693,7 @@ function HomeOutput({
                   cd
                 </span>
                 <span className="mt-1 block font-heading text-lg text-slate-50">
-                  {item.label}
+                  {localizedRouteLabel(languageData, item.href, item.label)}
                 </span>
               </span>
             </Button>
@@ -2501,25 +2703,27 @@ function HomeOutput({
   )
 }
 
-function AboutOutput() {
+function AboutOutput({ languageData }: { languageData: langtype }) {
+  const aboutCopy = languageData.about
+
   return (
-    <TerminalSection icon={UserRound} label="about" title={about.hero.title}>
+    <TerminalSection icon={UserRound} label="about" title={aboutCopy.hero.title}>
       <TerminalLines
         lines={[
-          about.hero.subtitle,
-          about.hero.description,
-          `LeetCode rating: ${about.stats.leetcodeRating}`,
+          aboutCopy.hero.subtitle,
+          aboutCopy.hero.description,
+          `LeetCode rating: ${aboutCopy.stats.leetcodeRating}`,
         ]}
       />
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {about.stats.statItems.map((item) => (
+        {aboutCopy.stats.statItems.map((item) => (
           <Metric key={item.label} label={item.label} value={item.value} />
         ))}
       </div>
       <div className="mt-6">
         <TerminalSubheading>experience</TerminalSubheading>
         <div className="mt-3 grid gap-3">
-          {about.experiences.map((experience) => (
+          {aboutCopy.experiences.map((experience) => (
             <Card
               key={`${experience.company}-${experience.title}`}
               size="sm"
@@ -2548,7 +2752,7 @@ function AboutOutput() {
       <div className="mt-6">
         <TerminalSubheading>technical stack</TerminalSubheading>
         <div className="mt-3 flex flex-wrap gap-2">
-          {about.techSkills.map((skill) => (
+          {aboutCopy.techSkills.map((skill) => (
             <Badge
               key={skill.name}
               variant="outline"
@@ -2564,10 +2768,12 @@ function AboutOutput() {
 }
 
 function ProjectList({
+  languageData,
   onNavigate,
   projects: projectItems,
   title,
 }: {
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
   projects: PortfolioProject[]
   title: string
@@ -2581,58 +2787,67 @@ function ProjectList({
         ]}
       />
       <div className="mt-5 grid gap-2">
-        {projectItems.map((project) => (
-          <button
-            key={project.slug}
-            type="button"
-            data-project-slug={project.slug}
-            onClick={() =>
-              onNavigate(`/projects/${project.slug}`, `project ${project.slug}`)
-            }
-            className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
-          >
-            <Badge
-              variant="outline"
-              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]"
+        {projectItems.map((project) => {
+          const localized = localizedProject(project, languageData)
+
+          return (
+            <button
+              key={project.slug}
+              type="button"
+              data-project-slug={project.slug}
+              onClick={() =>
+                onNavigate(
+                  `/projects/${project.slug}`,
+                  `project ${project.slug}`
+                )
+              }
+              className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
             >
-              {project.projectId}
-            </Badge>
-            <span className="min-w-0">
-              <span className="block font-heading text-base text-slate-50">
-                {project.title}
+              <Badge
+                variant="outline"
+                className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]"
+              >
+                {project.projectId}
+              </Badge>
+              <span className="min-w-0">
+                <span className="block font-heading text-base text-slate-50">
+                  {localized.title}
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-slate-400">
+                  {localized.description}
+                </span>
+                <span className="mt-2 flex flex-wrap gap-1.5">
+                  {project.stack.slice(0, 5).map((item) => (
+                    <Badge
+                      key={item}
+                      variant="outline"
+                      className="h-auto rounded-none border-[color:var(--shell-border)] px-1.5 py-1 font-mono text-[9px] tracking-[0.1em] text-slate-500 uppercase"
+                    >
+                      {item}
+                    </Badge>
+                  ))}
+                </span>
               </span>
-              <span className="mt-1 block text-sm leading-6 text-slate-400">
-                {project.description}
-              </span>
-              <span className="mt-2 flex flex-wrap gap-1.5">
-                {project.stack.slice(0, 5).map((item) => (
-                  <Badge
-                    key={item}
-                    variant="outline"
-                    className="h-auto rounded-none border-[color:var(--shell-border)] px-1.5 py-1 font-mono text-[9px] tracking-[0.1em] text-slate-500 uppercase"
-                  >
-                    {item}
-                  </Badge>
-                ))}
-              </span>
-            </span>
-            <Badge
-              variant="outline"
-              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase"
-            >
-              {project.category}
-            </Badge>
-          </button>
-        ))}
+              <Badge
+                variant="outline"
+                className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase"
+              >
+                {project.category}
+              </Badge>
+            </button>
+          )
+        })}
       </div>
     </TerminalSection>
   )
 }
 
 function ProjectDetailOutput({
+  languageData,
   onNavigate,
   project,
 }: {
+  languageData: langtype
   onNavigate: (path: string, command?: string) => void
   project?: PortfolioProject | null
 }) {
@@ -2650,17 +2865,19 @@ function ProjectDetailOutput({
     )
   }
 
+  const localized = localizedProject(project, languageData)
+
   return (
     <TerminalSection
       icon={FolderGit2}
       label={project.projectId}
-      title={project.title}
+      title={localized.title}
     >
       <TerminalLines
         lines={[
           `Type: ${project.type}`,
           `Route: /projects/${project.slug}`,
-          project.description,
+          localized.description,
           `Role: ${project.role}`,
         ]}
       />
@@ -2834,17 +3051,21 @@ function BlogDetailOutput({
   )
 }
 
-function ContactOutput() {
+function ContactOutput({ languageData }: { languageData: langtype }) {
   return (
-    <TerminalSection icon={Send} label="contact" title="Start a Conversation">
+    <TerminalSection
+      icon={Send}
+      label="contact"
+      title={languageData.contact.form.title}
+    >
       <TerminalLines
         lines={[
           "Path: Browser -> API -> Mail Service -> Developer Inbox.",
-          profile.alternativeHeroLine,
+          languageData.contact.thoughtText,
         ]}
       />
       <div className="mt-5">
-        <TerminalContactForm />
+        <TerminalContactForm languageData={languageData} />
       </div>
     </TerminalSection>
   )
