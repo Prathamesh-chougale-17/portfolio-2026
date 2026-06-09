@@ -92,11 +92,10 @@ type RouteState = {
 type TerminalTheme = "cyan" | "amber" | "violet"
 
 const INITIAL_STAMP = "--:--:--"
-const INSPECTOR_STORAGE_KEY = "event-horizon-terminal-inspector-open"
 const PENDING_COMMAND_KEY = "event-horizon-terminal-pending-command"
 const SIDEBAR_STORAGE_KEY = "event-horizon-terminal-sidebar-open"
 const THEME_STORAGE_KEY = "event-horizon-terminal-theme"
-let rememberedInspectorOpen = true
+let rememberedInspectorOpen = false
 let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
 
@@ -245,14 +244,6 @@ function storeSidebarOpen(value: boolean) {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
   } catch {
     // Sidebar persistence is a preference; the terminal still works without it.
-  }
-}
-
-function storeInspectorOpen(value: boolean) {
-  try {
-    window.localStorage.setItem(INSPECTOR_STORAGE_KEY, String(value))
-  } catch {
-    // Inspector persistence is a preference; the terminal still works without it.
   }
 }
 
@@ -463,28 +454,6 @@ export function TerminalPortfolioApp({
   }, [])
 
   useEffect(() => {
-    const restoreInspector = window.setTimeout(() => {
-      try {
-        const storedInspectorOpen = window.localStorage.getItem(
-          INSPECTOR_STORAGE_KEY
-        )
-        if (
-          storedInspectorOpen === "true" ||
-          storedInspectorOpen === "false"
-        ) {
-          const nextValue = storedInspectorOpen === "true"
-          rememberedInspectorOpen = nextValue
-          setInspectorOpen(nextValue)
-        }
-      } catch {
-        // Ignore blocked storage; the inspector falls back to open.
-      }
-    }, 0)
-
-    return () => window.clearTimeout(restoreInspector)
-  }, [])
-
-  useEffect(() => {
     function onWindowKeyDown(event: globalThis.KeyboardEvent) {
       const target = event.target as HTMLElement | null
       const isEditable =
@@ -511,7 +480,6 @@ export function TerminalPortfolioApp({
         setInspectorOpen((current) => {
           const nextValue = !current
           rememberedInspectorOpen = nextValue
-          storeInspectorOpen(nextValue)
           return nextValue
         })
       }
@@ -536,7 +504,6 @@ export function TerminalPortfolioApp({
   function applyInspectorOpen(nextValue: boolean) {
     rememberedInspectorOpen = nextValue
     setInspectorOpen(nextValue)
-    storeInspectorOpen(nextValue)
   }
 
   function navigateTo(path: string, command = `open ${path}`) {
@@ -1019,7 +986,9 @@ export function TerminalPortfolioApp({
           activeLog={activeLog}
           activeProject={activeProject}
           clock={clock}
+          inspectorOpen={inspectorOpen}
           latency={latency}
+          onInspectorOpenChange={applyInspectorOpen}
           route={routeState}
           themeConfig={themeConfig}
         />
@@ -1034,10 +1003,10 @@ export function TerminalPortfolioApp({
               ? "lg:grid-cols-[72px_minmax(0,1fr)_300px] xl:grid-cols-[72px_minmax(0,1fr)_320px]"
               : null,
             sidebarOpen && !inspectorOpen
-              ? "lg:grid-cols-[260px_minmax(0,1fr)_64px] xl:grid-cols-[280px_minmax(0,1fr)_64px]"
+              ? "lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]"
               : null,
             !sidebarOpen && !inspectorOpen
-              ? "lg:grid-cols-[72px_minmax(0,1fr)_64px]"
+              ? "lg:grid-cols-[72px_minmax(0,1fr)]"
               : null
           )}
         >
@@ -1159,19 +1128,20 @@ export function TerminalPortfolioApp({
             </form>
           </section>
 
-          <TerminalInspector
-            clock={clock}
-            history={history}
-            latency={latency}
-            open={inspectorOpen}
-            onOpenChange={applyInspectorOpen}
-            route={routeState}
-            setTheme={applyTheme}
-            theme={theme}
-            themeConfig={themeConfig}
-            unlockedEggs={unlockedEggs}
-            uptime={uptime}
-          />
+          {inspectorOpen ? (
+            <TerminalInspector
+              clock={clock}
+              history={history}
+              latency={latency}
+              onOpenChange={applyInspectorOpen}
+              route={routeState}
+              setTheme={applyTheme}
+              theme={theme}
+              themeConfig={themeConfig}
+              unlockedEggs={unlockedEggs}
+              uptime={uptime}
+            />
+          ) : null}
         </div>
       </div>
     </main>
@@ -1182,14 +1152,18 @@ function TerminalHeader({
   activeLog,
   activeProject,
   clock,
+  inspectorOpen,
   latency,
+  onInspectorOpenChange,
   route,
   themeConfig,
 }: {
   activeLog?: ResearchLog
   activeProject?: MissionProject
   clock: string
+  inspectorOpen: boolean
   latency: number
+  onInspectorOpenChange: (open: boolean) => void
   route: RouteState
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
@@ -1225,6 +1199,21 @@ function TerminalHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            aria-pressed={inspectorOpen}
+            aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
+            onClick={() => onInspectorOpenChange(!inspectorOpen)}
+            className={cn(
+              "h-9 rounded-none border border-white/10 bg-white/[0.035] px-3 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:border-cyan-300/40 hover:bg-white/[0.055] hover:text-cyan-100",
+              inspectorOpen && cn(themeConfig.border, themeConfig.soft)
+            )}
+          >
+            <Activity data-icon="inline-start" />
+            Inspector
+          </Button>
           <Telemetry label="Clock" value={clock} />
           <Telemetry label="Ping" value={`${latency}ms`} />
           <a
@@ -1512,7 +1501,6 @@ function TerminalInspector({
   history,
   latency,
   onOpenChange,
-  open,
   route,
   setTheme,
   theme,
@@ -1524,7 +1512,6 @@ function TerminalInspector({
   history: string[]
   latency: number
   onOpenChange: (open: boolean) => void
-  open: boolean
   route: RouteState
   setTheme: (theme: TerminalTheme) => void
   theme: TerminalTheme
@@ -1532,44 +1519,6 @@ function TerminalInspector({
   unlockedEggs: string[]
   uptime: number
 }) {
-  if (!open) {
-    return (
-      <aside
-        className="hud-panel min-h-0 rounded-lg p-2 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
-        data-inspector-open="false"
-      >
-        <div className="flex min-h-0 flex-col items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Open inspector"
-            title="Open inspector"
-            onClick={() => onOpenChange(true)}
-            className={cn(
-              "rounded-md border bg-white/[0.035]",
-              themeConfig.border,
-              themeConfig.soft
-            )}
-          >
-            <ChevronLeft data-icon="inline-start" />
-          </Button>
-
-          <div className="h-px w-full bg-white/10" />
-
-          {[ShieldCheck, Clock, Cpu, Sparkles].map((Icon, index) => (
-            <div
-              key={index}
-              className="flex size-8 items-center justify-center rounded-md border border-white/10 bg-white/[0.035] text-slate-300"
-            >
-              <Icon className={cn("size-4", themeConfig.text)} />
-            </div>
-          ))}
-        </div>
-      </aside>
-    )
-  }
-
   return (
     <aside
       className="hud-panel min-h-0 rounded-lg p-3 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
