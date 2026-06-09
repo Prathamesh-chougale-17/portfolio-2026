@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type WheelEvent,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -84,10 +85,28 @@ type TerminalPortfolioAppProps = {
   articleContent?: ReactNode
 }
 
+type EntryContent =
+  | {
+      articleContent?: ReactNode
+      route: RouteState
+      type: "route"
+    }
+  | {
+      type: "skills"
+    }
+  | {
+      type: "architecture"
+    }
+  | {
+      projects: PortfolioProject[]
+      title: string
+      type: "project-list"
+    }
+
 type Entry = {
   id: string
   command?: string
-  content?: ReactNode
+  content?: EntryContent
   lines?: string[]
   time: string
   variant?: "system" | "error" | "success" | "egg"
@@ -102,6 +121,18 @@ type RouteState = {
 }
 
 type TerminalTheme = "cyan" | "amber" | "violet"
+
+type TerminalSessionState = {
+  entries: Entry[]
+  hasStarted: boolean
+  history: string[]
+  lastRouteKey?: string
+  matrixMode: boolean
+  shouldScrollOutputToEnd: boolean
+  unlockedEggs: string[]
+  uptime: number
+  workbenchOpen: boolean
+}
 
 type ShellThemeConfig = {
   accent: string
@@ -121,6 +152,16 @@ const THEME_STORAGE_KEY = "pwsh-studio-theme"
 let rememberedInspectorOpen = false
 let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
+const terminalSession: TerminalSessionState = {
+  entries: [],
+  hasStarted: false,
+  history: [],
+  matrixMode: false,
+  shouldScrollOutputToEnd: false,
+  unlockedEggs: [],
+  uptime: 0,
+  workbenchOpen: false,
+}
 
 const routeItems = [
   { label: "Home", href: "/", command: "cd /", icon: Home, meta: "boot" },
@@ -369,6 +410,42 @@ function entryId() {
     : `${Date.now()}-${Math.random()}`
 }
 
+function bootEntry(): Entry {
+  return {
+    id: "terminal-boot",
+    command: "source ~/.profile",
+    lines: [
+      "Workspace shell initialized.",
+      "Profile, projects, writing, and contact are ready.",
+    ],
+    time: "boot",
+    variant: "system",
+  }
+}
+
+function routeEntry(
+  route: RouteState,
+  articleContent?: ReactNode,
+  command = route.command,
+  time = "route"
+): Entry {
+  return {
+    id: `route-${entryId()}`,
+    command,
+    content: {
+      articleContent,
+      route,
+      type: "route",
+    },
+    time,
+    variant: "success",
+  }
+}
+
+function initialEntries(route: RouteState, articleContent?: ReactNode) {
+  return [bootEntry(), routeEntry(route, articleContent)]
+}
+
 function normalizeRoute(path: string) {
   const value = path.trim() || "/"
   if (value === "/project") return "/projects"
@@ -515,6 +592,40 @@ function resolveLocationTarget(rawTarget: string, currentPath: string) {
   }
 
   return target.startsWith("/") ? target : `/${target}`
+}
+
+function resolveNaturalRouteCommand(command: string) {
+  const match = command.match(/^(show(?: me)?|go(?: to)?|take me to)\s+(.+)$/i)
+  if (!match) return null
+
+  const target = match[2]
+    .trim()
+    .replace(/^the\s+/i, "")
+    .replace(/\s+page$/i, "")
+    .trim()
+    .toLowerCase()
+
+  if (["/", "home", "homepage", "root"].includes(target)) return "/"
+  if (["about", "profile", "whoami"].includes(target)) return "/about"
+  if (["project", "projects", "case studies", "work"].includes(target)) {
+    return "/projects"
+  }
+  if (["blog", "notes", "logs", "writing"].includes(target)) return "/blog"
+  if (["contact", "message"].includes(target)) return "/contact"
+
+  if (target.startsWith("/")) return target
+
+  if (target.startsWith("project ")) {
+    const project = findProject(target.replace(/^project\s+/i, ""))
+    return project ? `/projects/${project.slug}` : null
+  }
+
+  if (target.startsWith("note ") || target.startsWith("blog ")) {
+    const log = findResearchLog(target.replace(/^(note|blog)\s+/i, ""))
+    return log ? `/blog/${log.slug}` : null
+  }
+
+  return null
 }
 
 function workspaceTree() {
@@ -686,8 +797,8 @@ export function TerminalPortfolioApp({
   const [input, setInput] = useState("")
   const [clock, setClock] = useState(INITIAL_STAMP)
   const [latency, setLatency] = useState(18)
-  const [uptime, setUptime] = useState(0)
-  const [history, setHistory] = useState<string[]>([])
+  const [uptime, setUptime] = useState(() => terminalSession.uptime)
+  const [history, setHistory] = useState<string[]>(() => terminalSession.history)
   const [, setHistoryIndex] = useState<number | null>(null)
   const [inspectorOpen, setInspectorOpen] = useState(
     () => rememberedInspectorOpen
@@ -696,15 +807,33 @@ export function TerminalPortfolioApp({
   const [theme, setTheme] = useState<TerminalTheme>(
     () => rememberedTerminalTheme
   )
-  const [matrixMode, setMatrixMode] = useState(false)
-  const [workbenchOpen, setWorkbenchOpen] = useState(false)
-  const [unlockedEggs, setUnlockedEggs] = useState<string[]>([])
+  const [matrixMode, setMatrixMode] = useState(
+    () => terminalSession.matrixMode
+  )
+  const [workbenchOpen, setWorkbenchOpen] = useState(
+    () => terminalSession.workbenchOpen
+  )
+  const [unlockedEggs, setUnlockedEggs] = useState<string[]>(
+    () => terminalSession.unlockedEggs
+  )
   const themeConfig = terminalThemes[theme]
 
   const routeState = useMemo(
     () => resolveRoute(pathname, initialView, selectedSlug),
     [initialView, pathname, selectedSlug]
   )
+  const routeKey = `${routeState.view}:${routeState.selectedSlug ?? ""}:${routeState.path}`
+  const [entries, setEntries] = useState<Entry[]>(() => {
+    if (terminalSession.hasStarted) {
+      return terminalSession.entries
+    }
+
+    const nextEntries = initialEntries(routeState, articleContent)
+    terminalSession.entries = nextEntries
+    terminalSession.hasStarted = true
+    terminalSession.lastRouteKey = routeKey
+    return nextEntries
+  })
 
   useEffect(() => {
     const restoreTheme = window.setTimeout(() => {
@@ -793,7 +922,7 @@ export function TerminalPortfolioApp({
     setInspectorOpen(nextValue)
   }
 
-  function navigateTo(path: string, command = `open ${path}`) {
+  function navigateTo(path: string, command = `cd ${path}`) {
     const target = normalizeRoute(path)
     if (!isValidRoute(target)) {
       appendEntry({
@@ -807,44 +936,60 @@ export function TerminalPortfolioApp({
     if (target === pathname) {
       appendEntry({
         command,
-        lines: [`Already at ${target}.`],
-        variant: "system",
+        content: {
+          articleContent,
+          route: routeState,
+          type: "route",
+        },
+        variant: "success",
       })
       return
     }
 
+    terminalSession.shouldScrollOutputToEnd = true
     window.sessionStorage.setItem(PENDING_COMMAND_KEY, command)
-    router.push(target)
+    router.push(target, { scroll: false })
   }
 
-  function routeEntry(nextRoute: RouteState): Entry {
-    return {
-      id: `route-${nextRoute.path}`,
-      command: nextRoute.command,
-      content: (
-        <RouteOutput
-          articleContent={articleContent}
-          onNavigate={navigateTo}
-          route={nextRoute}
-        />
-      ),
-      time: "route",
-      variant: "success",
+  useLayoutEffect(() => {
+    if (terminalSession.hasStarted && terminalSession.lastRouteKey !== routeKey) {
+      terminalSession.shouldScrollOutputToEnd = true
     }
-  }
 
-  const [entries, setEntries] = useState<Entry[]>([])
+    if (!terminalSession.shouldScrollOutputToEnd) {
+      return
+    }
 
-  const routeKey = `${routeState.view}:${routeState.selectedSlug ?? ""}:${routeState.path}`
+    const output = outputRef.current
+    if (!output) {
+      return
+    }
+
+    output.scrollTop = output.scrollHeight
+    const frame = window.requestAnimationFrame(() => {
+      output.scrollTop = output.scrollHeight
+      terminalSession.shouldScrollOutputToEnd = false
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [entries.length, routeKey])
 
   useEffect(() => {
+    if (terminalSession.lastRouteKey === routeKey) {
+      return
+    }
+
     const pending = window.sessionStorage.getItem(PENDING_COMMAND_KEY)
-    if (!pending) return
     window.sessionStorage.removeItem(PENDING_COMMAND_KEY)
+    terminalSession.lastRouteKey = routeKey
     window.setTimeout(() => {
       appendEntry({
-        command: pending,
-        lines: [`Route synchronized: ${routeState.path}`],
+        command: pending ?? routeState.command,
+        content: {
+          articleContent,
+          route: routeState,
+          type: "route",
+        },
         variant: "success",
       })
     }, 0)
@@ -852,15 +997,35 @@ export function TerminalPortfolioApp({
   }, [routeKey])
 
   useEffect(() => {
-    outputRef.current?.scrollTo({ top: 0 })
-  }, [routeKey])
+    terminalSession.entries = entries
+  }, [entries])
+
+  useEffect(() => {
+    terminalSession.history = history
+  }, [history])
+
+  useEffect(() => {
+    terminalSession.matrixMode = matrixMode
+  }, [matrixMode])
+
+  useEffect(() => {
+    terminalSession.workbenchOpen = workbenchOpen
+  }, [workbenchOpen])
+
+  useEffect(() => {
+    terminalSession.unlockedEggs = unlockedEggs
+  }, [unlockedEggs])
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setClock(stamp()), 0)
     const interval = window.setInterval(() => {
       setClock(stamp())
       setLatency(14 + Math.round(Math.random() * 22))
-      setUptime((value) => value + 1)
+      setUptime((value) => {
+        const nextValue = value + 1
+        terminalSession.uptime = nextValue
+        return nextValue
+      })
     }, 1000)
 
     return () => {
@@ -885,32 +1050,44 @@ export function TerminalPortfolioApp({
     : undefined
 
   function appendEntry(entry: Omit<Entry, "id" | "time">) {
-    setEntries((current) => [
-      ...current,
-      { ...entry, id: entryId(), time: stamp() },
-    ])
-    window.setTimeout(() => {
-      outputRef.current?.scrollTo({
-        top: outputRef.current.scrollHeight,
-        behavior: "smooth",
-      })
-    }, 0)
+    terminalSession.shouldScrollOutputToEnd = true
+    setEntries((current) => {
+      const nextEntries = [
+        ...current,
+        { ...entry, id: entryId(), time: stamp() },
+      ]
+      terminalSession.entries = nextEntries
+      terminalSession.hasStarted = true
+      return nextEntries
+    })
   }
 
   function unlockEgg(name: string) {
-    setUnlockedEggs((current) =>
-      current.includes(name) ? current : [...current, name]
-    )
+    setUnlockedEggs((current) => {
+      const nextEggs = current.includes(name) ? current : [...current, name]
+      terminalSession.unlockedEggs = nextEggs
+      return nextEggs
+    })
   }
 
   function runCommand(rawCommand: string) {
     const command = rawCommand.trim()
     if (!command) return
 
-    setHistory((current) => [...current, command])
+    setHistory((current) => {
+      const nextHistory = [...current, command]
+      terminalSession.history = nextHistory
+      return nextHistory
+    })
     setHistoryIndex(null)
 
     const normalized = command.toLowerCase()
+    const naturalRoute = resolveNaturalRouteCommand(command)
+
+    if (naturalRoute) {
+      navigateTo(naturalRoute, command)
+      return
+    }
 
     if (normalized === "home") {
       navigateTo("/", command)
@@ -1073,7 +1250,7 @@ export function TerminalPortfolioApp({
       case "skills":
         appendEntry({
           command,
-          content: <SkillOutput />,
+          content: { type: "skills" },
           variant: "success",
         })
         return
@@ -1081,37 +1258,33 @@ export function TerminalPortfolioApp({
       case "stack-map":
         appendEntry({
           command,
-          content: <ArchitectureOutput />,
+          content: { type: "architecture" },
           variant: "success",
         })
         return
       case "projects --backend":
         appendEntry({
           command,
-          content: (
-            <ProjectList
-              onNavigate={navigateTo}
-              projects={projects.filter((project) =>
-                project.categories.includes("Backend")
-              )}
-              title="Backend systems"
-            />
-          ),
+          content: {
+            projects: projects.filter((project) =>
+              project.categories.includes("Backend")
+            ),
+            title: "Backend systems",
+            type: "project-list",
+          },
           variant: "success",
         })
         return
       case "projects --blockchain":
         appendEntry({
           command,
-          content: (
-            <ProjectList
-              onNavigate={navigateTo}
-              projects={projects.filter((project) =>
-                project.categories.includes("Blockchain")
-              )}
-              title="Blockchain systems"
-            />
-          ),
+          content: {
+            projects: projects.filter((project) =>
+              project.categories.includes("Blockchain")
+            ),
+            title: "Blockchain systems",
+            type: "project-list",
+          },
           variant: "success",
         })
         return
@@ -1343,7 +1516,13 @@ export function TerminalPortfolioApp({
       case "clear":
       case "cls":
       case "clear-host":
+        terminalSession.shouldScrollOutputToEnd = false
+        terminalSession.entries = []
         setEntries([])
+        terminalSession.matrixMode = false
+        setMatrixMode(false)
+        terminalSession.workbenchOpen = false
+        setWorkbenchOpen(false)
         return
       default:
         if (/^(grep|rg|select-string|sls)\s+/i.test(command)) {
@@ -1574,23 +1753,11 @@ export function TerminalPortfolioApp({
               )}
               data-terminal-output
             >
-              {[
-                {
-                  id: "terminal-boot",
-                  command: "source ~/.profile",
-                  lines: [
-                    "Workspace shell initialized.",
-                    "Profile, projects, writing, and contact are ready.",
-                  ],
-                  time: "boot",
-                  variant: "system" as const,
-                },
-                routeEntry(routeState),
-                ...entries,
-              ].map((entry) => (
+              {entries.map((entry) => (
                 <EntryBlock
                   entry={entry}
                   key={entry.id}
+                  onNavigate={navigateTo}
                   themeConfig={themeConfig}
                 />
               ))}
@@ -2150,9 +2317,11 @@ function TerminalInspector({
 
 function EntryBlock({
   entry,
+  onNavigate,
   themeConfig,
 }: {
   entry: Entry
+  onNavigate: (path: string, command?: string) => void
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
   return (
@@ -2177,9 +2346,44 @@ function EntryBlock({
           {entry.lines.join("\n")}
         </pre>
       ) : null}
-      {entry.content ? <div className="mt-3">{entry.content}</div> : null}
+      {entry.content ? (
+        <div className="mt-3">
+          <EntryContentView content={entry.content} onNavigate={onNavigate} />
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function EntryContentView({
+  content,
+  onNavigate,
+}: {
+  content: EntryContent
+  onNavigate: (path: string, command?: string) => void
+}) {
+  switch (content.type) {
+    case "route":
+      return (
+        <RouteOutput
+          articleContent={content.articleContent}
+          onNavigate={onNavigate}
+          route={content.route}
+        />
+      )
+    case "skills":
+      return <SkillOutput />
+    case "architecture":
+      return <ArchitectureOutput />
+    case "project-list":
+      return (
+        <ProjectList
+          onNavigate={onNavigate}
+          projects={content.projects}
+          title={content.title}
+        />
+      )
+  }
 }
 
 function RouteOutput({
