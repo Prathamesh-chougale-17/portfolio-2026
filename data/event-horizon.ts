@@ -2,6 +2,7 @@ import { en } from "@/data/en"
 
 export const navItems = [
   { title: "Home", href: "/" },
+  { title: "About", href: "/about" },
   { title: "Projects", href: "/projects" },
   { title: "Blog", href: "/blog" },
   { title: "Contact", href: "/contact" },
@@ -66,6 +67,8 @@ export const skills = [
 ]
 
 export const achievements = en.achievements
+
+export const about = en.about
 
 export const backendFlow = [
   "Client Request",

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { DM_Sans, Geist_Mono, Space_Grotesk } from "next/font/google"
 
-import { MissionShell } from "@/components/layout/MissionShell"
 import { ThemeProvider } from "@/components/theme-provider"
 import { profile } from "@/data/event-horizon"
 import { cn } from "@/lib/utils"
@@ -27,11 +26,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://event-horizon-os.local"),
   title: {
     default:
-      "Event Horizon OS - Backend, Blockchain & Full-Stack Developer Portfolio",
-    template: "%s | Event Horizon OS",
+      "Event Horizon Terminal - Backend, Blockchain & Full-Stack Developer Portfolio",
+    template: "%s | Event Horizon Terminal",
   },
   description:
-    "A cinematic mission-control portfolio for Prathamesh Chougale, a backend-first full-stack and blockchain developer.",
+    "A terminal-first portfolio app for Prathamesh Chougale, a backend-first full-stack and blockchain developer.",
   keywords: [
     profile.name,
     "backend developer",
@@ -42,15 +41,15 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: profile.name }],
   openGraph: {
-    title: "Event Horizon OS",
+    title: "Event Horizon Terminal",
     description: profile.tagline,
     type: "website",
-    siteName: "Event Horizon OS",
+    siteName: "Event Horizon Terminal",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Event Horizon OS",
+    title: "Event Horizon Terminal",
     description: profile.tagline,
     images: ["/opengraph-image"],
   },
@@ -65,6 +64,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={cn(
         "dark antialiased",
         sansFont.variable,
@@ -73,9 +73,7 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>
-          <MissionShell>{children}</MissionShell>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   )

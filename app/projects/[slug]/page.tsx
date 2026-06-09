@@ -1,9 +1,7 @@
-import Link from "next/link"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
 
-import { ProjectCaseStudy } from "@/components/projects/ProjectCaseStudy"
+import { TerminalPortfolioApp } from "@/components/terminal/TerminalPortfolioApp"
 import { getProject, projects } from "@/data/event-horizon"
 
 type Props = {
@@ -25,36 +23,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${project.missionName} - Mission Case Study`,
+    title: `${project.missionName} - Terminal Case Study`,
     description: project.description,
+    alternates: {
+      canonical: `/projects/${project.slug}`,
+    },
     openGraph: {
       title: project.missionName,
       description: project.description,
       images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: project.missionName,
+      description: project.description,
+      images: ["/opengraph-image"],
     },
   }
 }
 
 export default async function ProjectPage({ params }: Props) {
   const { slug } = await params
-  const project = getProject(slug)
 
-  if (!project) {
+  if (!getProject(slug)) {
     notFound()
   }
 
-  return (
-    <div className="px-4 pt-32 pb-24 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <Link
-          href="/projects"
-          className="mb-10 inline-flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-cyan-200 uppercase hover:text-cyan-100"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Galactic Archive
-        </Link>
-        <ProjectCaseStudy project={project} />
-      </div>
-    </div>
-  )
+  return <TerminalPortfolioApp initialView="project-detail" selectedSlug={slug} />
 }

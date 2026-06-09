@@ -4,7 +4,7 @@ import { projects, researchLogs } from "@/data/event-horizon"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://event-horizon-os.local"
-  const routes = ["", "/projects", "/blog", "/contact"].map((route) => ({
+  const routes = ["", "/about", "/projects", "/blog", "/contact"].map((route) => ({
     url: `${base}${route}`,
     lastModified: new Date(),
   }))
