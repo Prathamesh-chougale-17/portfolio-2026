@@ -128,7 +128,8 @@ type TerminalSessionState = {
   history: string[]
   lastRouteKey?: string
   matrixMode: boolean
-  shouldScrollOutputToEnd: boolean
+  pendingScrollEntryId?: string
+  shouldPrimeOutputToEnd: boolean
   unlockedEggs: string[]
   uptime: number
   workbenchOpen: boolean
@@ -157,7 +158,7 @@ const terminalSession: TerminalSessionState = {
   hasStarted: false,
   history: [],
   matrixMode: false,
-  shouldScrollOutputToEnd: false,
+  shouldPrimeOutputToEnd: false,
   unlockedEggs: [],
   uptime: 0,
   workbenchOpen: false,
@@ -251,7 +252,6 @@ const commandList = [
   "grep ",
   "find ",
   "curl /api/contact",
-  "xdg-open resume.pdf",
   "xdg-open workbench",
   "theme cyan",
   "theme amber",
@@ -416,8 +416,10 @@ function routeEntry(
   command = route.command,
   time = "route"
 ): Entry {
+  const routeId = route.path === "/" ? "home" : route.path.replace(/\W+/g, "-")
+
   return {
-    id: `route-${entryId()}`,
+    id: `route-initial-${routeId}`,
     command,
     content: {
       articleContent,
@@ -709,7 +711,7 @@ function commandIndexLines() {
     "  whoami, uname -a, status, skills, architecture, projects, blog",
     "  grep <query>, find projects -name <query>",
     "Actions",
-    "  contact, xdg-open resume.pdf, curl /api/contact, ping pwsh-core",
+    "  contact, curl /api/contact, ping pwsh-core",
     "Preferences",
     "  theme cyan|amber|violet",
     "Extras",
@@ -933,18 +935,14 @@ export function TerminalPortfolioApp({
       return
     }
 
-    terminalSession.shouldScrollOutputToEnd = true
+    terminalSession.shouldPrimeOutputToEnd = true
     window.sessionStorage.setItem(PENDING_COMMAND_KEY, command)
     router.push(target, { scroll: false })
   }
 
   useLayoutEffect(() => {
     if (terminalSession.hasStarted && terminalSession.lastRouteKey !== routeKey) {
-      terminalSession.shouldScrollOutputToEnd = true
-    }
-
-    if (!terminalSession.shouldScrollOutputToEnd) {
-      return
+      terminalSession.shouldPrimeOutputToEnd = true
     }
 
     const output = outputRef.current
@@ -952,10 +950,48 @@ export function TerminalPortfolioApp({
       return
     }
 
-    output.scrollTop = output.scrollHeight
+    const outputElement = output
+
+    function scrollEntryIntoView(entryId: string) {
+      const target = outputElement.querySelector<HTMLElement>(
+        `[data-terminal-entry-id="${entryId}"]`
+      )
+
+      if (!target) {
+        return false
+      }
+
+      const outputRect = outputElement.getBoundingClientRect()
+      const targetRect = target.getBoundingClientRect()
+      const nextTop = outputElement.scrollTop + targetRect.top - outputRect.top
+      const maxTop = outputElement.scrollHeight - outputElement.clientHeight
+      outputElement.scrollTop = Math.max(0, Math.min(nextTop, maxTop))
+      return true
+    }
+
+    const pendingEntryId = terminalSession.pendingScrollEntryId
+    if (pendingEntryId) {
+      const didScroll = scrollEntryIntoView(pendingEntryId)
+      const frame = window.requestAnimationFrame(() => {
+        scrollEntryIntoView(pendingEntryId)
+        terminalSession.pendingScrollEntryId = undefined
+      })
+
+      if (didScroll) {
+        terminalSession.shouldPrimeOutputToEnd = false
+      }
+
+      return () => window.cancelAnimationFrame(frame)
+    }
+
+    if (!terminalSession.shouldPrimeOutputToEnd) {
+      return
+    }
+
+    outputElement.scrollTop = outputElement.scrollHeight
     const frame = window.requestAnimationFrame(() => {
-      output.scrollTop = output.scrollHeight
-      terminalSession.shouldScrollOutputToEnd = false
+      outputElement.scrollTop = outputElement.scrollHeight
+      terminalSession.shouldPrimeOutputToEnd = false
     })
 
     return () => window.cancelAnimationFrame(frame)
@@ -1037,12 +1073,10 @@ export function TerminalPortfolioApp({
     : undefined
 
   function appendEntry(entry: Omit<Entry, "id" | "time">) {
-    terminalSession.shouldScrollOutputToEnd = true
+    const nextEntry = { ...entry, id: entryId(), time: stamp() }
+    terminalSession.pendingScrollEntryId = nextEntry.id
     setEntries((current) => {
-      const nextEntries = [
-        ...current,
-        { ...entry, id: entryId(), time: stamp() },
-      ]
+      const nextEntries = [...current, nextEntry]
       terminalSession.entries = nextEntries
       terminalSession.hasStarted = true
       return nextEntries
@@ -1183,7 +1217,7 @@ export function TerminalPortfolioApp({
             "Routes: cd /about, cd /projects, cd /projects/<slug>, cd /blog/<slug>, cd ...",
             "Linux: ls, tree, pwd, cat <file>, grep <query>, find projects -name <query>.",
             "Data: whoami, status, skills, architecture, projects --backend, projects --blockchain.",
-            "Shell: ps, uname -a, env, ping pwsh-core, curl /api/contact, xdg-open resume.pdf.",
+            "Shell: ps, uname -a, env, ping pwsh-core, curl /api/contact.",
             "Extras: easter-eggs for hidden commands.",
           ],
         })
@@ -1503,7 +1537,8 @@ export function TerminalPortfolioApp({
       case "clear":
       case "cls":
       case "clear-host":
-        terminalSession.shouldScrollOutputToEnd = false
+        terminalSession.pendingScrollEntryId = undefined
+        terminalSession.shouldPrimeOutputToEnd = false
         terminalSession.entries = []
         setEntries([])
         terminalSession.matrixMode = false
@@ -1568,21 +1603,6 @@ export function TerminalPortfolioApp({
               "Available: profile.json, projects.json, notes.json, architecture.map.",
             ],
             variant: "error",
-          })
-          return
-        }
-
-        if (
-          normalized === "xdg-open resume.pdf" ||
-          normalized === "xdg-open /resume.pdf" ||
-          normalized === "start-process resume" ||
-          normalized === "start resume"
-        ) {
-          window.open("/resume.pdf", "_blank", "noopener,noreferrer")
-          appendEntry({
-            command,
-            lines: ["Opened resume.pdf"],
-            variant: "success",
           })
           return
         }
@@ -2312,7 +2332,7 @@ function EntryBlock({
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
   return (
-    <div className="mb-5 font-mono">
+    <div className="mb-5 font-mono" data-terminal-entry-id={entry.id}>
       <div className="flex flex-wrap items-center gap-3 text-[10px] tracking-[0.16em]">
         <span className="text-slate-600 uppercase">{entry.time}</span>
         {entry.command ? (

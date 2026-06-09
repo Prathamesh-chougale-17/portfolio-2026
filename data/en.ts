@@ -349,7 +349,7 @@ export const en: langtype = {
     ],
     stats: {
       statItems: [
-        { label: "LeetCode Problems Solved", value: "250+" },
+        { label: "LeetCode Problems Solved", value: "450+" },
         { label: "Hackathon Wins", value: "5+" },
       ],
       leetcodeRating: "1500+",

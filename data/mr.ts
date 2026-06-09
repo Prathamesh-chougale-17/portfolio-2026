@@ -349,7 +349,7 @@ export const mr: langtype = {
     ],
     stats: {
       statItems: [
-        { label: "LeetCode समस्या सोडवल्या", value: "250+" },
+        { label: "LeetCode समस्या सोडवल्या", value: "450+" },
         { label: "हॅकाथॉन विजय", value: "5+" },
       ],
       leetcodeRating: "1500+",

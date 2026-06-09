@@ -24,7 +24,7 @@ export const profile = {
   stats: [
     { label: "Hackathon wins", value: "5+" },
     { label: "LeetCode rating", value: en.about.stats.leetcodeRating },
-    { label: "Problems solved", value: "250+" },
+    { label: "Problems solved", value: "450+" },
     { label: "Open-source work", value: "12k+ repo" },
   ],
   socials: en.contact.socials.links.map((link) => ({

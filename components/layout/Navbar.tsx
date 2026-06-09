@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Command, FileText, Menu, X } from "lucide-react"
+import { Command, Menu, X } from "lucide-react"
 import { useState } from "react"
 
 import { Icons } from "@/components/icons"
@@ -87,17 +87,6 @@ export function Navbar({ onOpenTerminal }: { onOpenTerminal: () => void }) {
             )}
           >
             <LinkedInIcon className="size-4" />
-          </a>
-          <a
-            href="/resume.pdf"
-            aria-label="Resume placeholder"
-            className={cn(
-              buttonVariants({ size: "default" }),
-              "h-9 border border-yellow-300/30 bg-yellow-300 text-slate-950 hover:bg-yellow-200"
-            )}
-          >
-            <FileText className="size-4" />
-            Resume
           </a>
         </div>
 
