@@ -13,13 +13,13 @@ export const profile = {
   role: "Backend-first full-stack and blockchain developer",
   company: en.hero.company,
   companyLink: en.hero.companyLink,
-  tagline: "Backend systems. Blockchain protocols. Frontend galaxies.",
+  tagline: "Backend systems, blockchain products, and polished web experiences.",
   alternativeHeroLine:
     "I build invisible systems that power visible experiences.",
   heroCopy:
-    "I build backend systems that behave like spacecraft: stable under pressure, observable in motion, and designed for unknown worlds.",
+    "I build backend systems that stay reliable under pressure, observable in production, and simple for teams to operate.",
   secondaryCopy:
-    "I am a full-stack and blockchain developer with a backend-first mindset. This portfolio is my mission control - a cinematic archive of systems, experiments, protocols, and ideas built at the edge of imagination.",
+    "A PowerShell-inspired developer workspace for exploring the systems, products, protocols, and ideas I have built.",
   leetcodeUsername: en.leetcode_username,
   stats: [
     { label: "Hackathon wins", value: "5+" },
@@ -34,11 +34,11 @@ export const profile = {
 }
 
 export const initSequence = [
-  "INITIALIZING EVENT HORIZON OS...",
+  "STARTING PWSH STUDIO...",
   "BACKEND CORE: ONLINE",
-  "BLOCKCHAIN NODE: SYNCHRONIZED",
-  "FRONTEND INTERFACE: RENDERED",
-  "MISSION STATUS: READY",
+  "BLOCKCHAIN TOOLING: READY",
+  "FRONTEND INTERFACE: LOADED",
+  "WORKSPACE STATUS: READY",
 ]
 
 export const skills = [
@@ -168,7 +168,7 @@ export const architectureLayers: ArchitectureLayer[] = [
     responsibilities: [
       "Package services consistently",
       "Make release paths repeatable",
-      "Expose health signals before users notice problems",
+      "Expose health indicators before users notice problems",
     ],
     flow: ["Build", "Container", "Deploy", "Telemetry"],
   },
@@ -185,9 +185,9 @@ export const projectFilters = [
 
 export type ProjectFilter = (typeof projectFilters)[number]
 
-export type MissionProject = {
+export type PortfolioProject = {
   slug: string
-  missionName: string
+  title: string
   type: string
   category: Exclude<ProjectFilter, "All">
   categories: Exclude<ProjectFilter, "All">[]
@@ -206,8 +206,7 @@ export type MissionProject = {
   githubLink?: string
   liveLink?: string
   featured: boolean
-  signal: string
-  coordinates: string
+  projectId: string
 }
 
 function slugify(value: string) {
@@ -217,9 +216,9 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "")
 }
 
-function classify(tags: string[], title: string): MissionProject["categories"] {
+function classify(tags: string[], title: string): PortfolioProject["categories"] {
   const joined = `${title} ${tags.join(" ")}`.toLowerCase()
-  const categories = new Set<MissionProject["category"]>()
+  const categories = new Set<PortfolioProject["category"]>()
 
   if (
     /(blockchain|solana|avalanche|algorand|erc|web3|ethereum|smart contract)/.test(
@@ -258,15 +257,15 @@ function classify(tags: string[], title: string): MissionProject["categories"] {
   return [...categories]
 }
 
-function projectType(categories: MissionProject["categories"]) {
-  if (categories.includes("Blockchain")) return "Blockchain Protocol Mission"
-  if (categories.includes("Backend")) return "Backend Infrastructure Mission"
-  if (categories.includes("Experimental")) return "Experimental Systems Mission"
-  if (categories.includes("Frontend")) return "Frontend Interface Mission"
-  return "Full-stack Star System"
+function projectType(categories: PortfolioProject["categories"]) {
+  if (categories.includes("Blockchain")) return "Blockchain Protocol Case Study"
+  if (categories.includes("Backend")) return "Backend Infrastructure Case Study"
+  if (categories.includes("Experimental")) return "Experimental Systems Build"
+  if (categories.includes("Frontend")) return "Frontend Product Interface"
+  return "Full-stack Product System"
 }
 
-export const projects: MissionProject[] = en.projects.map((project, index) => {
+export const projects: PortfolioProject[] = en.projects.map((project, index) => {
   const categories = classify(project.tags, project.title)
   const category = categories.includes("Full-stack")
     ? "Full-stack"
@@ -276,13 +275,13 @@ export const projects: MissionProject[] = en.projects.map((project, index) => {
 
   return {
     slug,
-    missionName: project.title,
+    title: project.title,
     type: projectType(categories),
     category,
     categories,
     stack,
     description: project.description,
-    problem: `Design and ship ${project.title} as a reliable product system with clear user flows, durable data boundaries, and a deployable architecture.`,
+    problem: `Build ${project.title} as a reliable product system with clear user flows, durable data boundaries, and a deployable architecture.`,
     role: "Product engineer, system designer, full-stack implementer, and deployment owner.",
     architecture: `${project.title} is modeled as a layered system: interface surface, API boundary, application services, data persistence, observability hooks, and release pipeline.`,
     backendDecisions: [
@@ -292,13 +291,13 @@ export const projects: MissionProject[] = en.projects.map((project, index) => {
     ],
     blockchainLogic: categories.includes("Blockchain")
       ? "Wallet, transaction, token, or chain-specific logic is treated as infrastructure, with the interface reflecting confirmation and failure states."
-      : "No chain dependency is required for this mission, but the architecture leaves room for verifiable events and audit trails.",
+      : "No chain dependency is required for this project, but the architecture leaves room for verifiable events and audit trails.",
     frontendExperience:
       "The interface focuses on fast scanning, confident action, and visual feedback that explains what the system is doing.",
     databaseDesign:
       "The data model favors explicit ownership, stable identifiers, and records that can support analytics, audit, and future integrations.",
     securityNotes:
-      "The mission emphasizes authenticated access, least-privilege paths, guarded inputs, and clear failure messages.",
+      "The project emphasizes authenticated access, least-privilege paths, guarded inputs, and clear failure messages.",
     performanceNotes:
       "The first load is kept lean, heavy experiences are isolated, and repeated views are designed for cache-friendly data access.",
     lessonsLearned:
@@ -306,10 +305,7 @@ export const projects: MissionProject[] = en.projects.map((project, index) => {
     githubLink: project.githubLink,
     liveLink: project.liveLink,
     featured: project.featured,
-    signal: `EH-${String(index + 1).padStart(3, "0")}`,
-    coordinates: `${(19 + index * 7) % 89}.${(42 + index * 13) % 97} / ${
-      (71 + index * 11) % 99
-    }.${(8 + index * 5) % 89}`,
+    projectId: `PWSH-${String(index + 1).padStart(3, "0")}`,
   }
 })
 
@@ -330,19 +326,19 @@ export type ResearchLog = {
 
 export const researchLogs: ResearchLog[] = [
   {
-    slug: "designing-apis-like-spacecraft-systems",
-    number: "LOG 001",
-    title: "Designing APIs Like Spacecraft Systems",
+    slug: "designing-apis-for-production-reliability",
+    number: "NOTE 001",
+    title: "Designing APIs for Production Reliability",
     category: "Backend Architecture",
     date: "2026-01-12",
     readingTime: "6 min read",
     tags: ["API Design", "Reliability", "Observability"],
     excerpt:
-      "A backend-first note on stable interfaces, telemetry, failure isolation, and why APIs should behave like mission-critical systems.",
+      "A backend-first note on stable interfaces, telemetry, failure isolation, and why APIs should behave like production-critical systems.",
   },
   {
     slug: "why-backend-developers-should-care-about-cinematic-ux",
-    number: "LOG 002",
+    number: "NOTE 002",
     title: "Why Backend Developers Should Care About Cinematic UX",
     category: "Developer Philosophy",
     date: "2026-01-18",
@@ -353,7 +349,7 @@ export const researchLogs: ResearchLog[] = [
   },
   {
     slug: "building-a-blockchain-indexer-from-scratch",
-    number: "LOG 003",
+    number: "NOTE 003",
     title: "Building a Blockchain Indexer from Scratch",
     category: "Blockchain Engineering",
     date: "2026-01-24",
@@ -364,7 +360,7 @@ export const researchLogs: ResearchLog[] = [
   },
   {
     slug: "postgresql-queues-and-event-driven-systems",
-    number: "LOG 004",
+    number: "NOTE 004",
     title: "PostgreSQL, Queues, and Event-Driven Systems",
     category: "System Design",
     date: "2026-02-02",
@@ -374,19 +370,19 @@ export const researchLogs: ResearchLog[] = [
       "A practical mental model for turning product actions into durable events without making the system harder to reason about.",
   },
   {
-    slug: "how-i-built-event-horizon-os",
-    number: "LOG 005",
-    title: "How I Built Event Horizon OS",
-    category: "Space-Inspired Interfaces",
+    slug: "building-powershell-inspired-developer-workspace",
+    title: "Building a PowerShell-Inspired Developer Workspace",
+    number: "NOTE 005",
+    category: "PowerShell-Inspired Interfaces",
     date: "2026-02-10",
     readingTime: "6 min read",
     tags: ["Portfolio", "Next.js", "Motion"],
     excerpt:
-      "A build log for the mission-control portfolio concept, from data modeling to cinematic interaction design.",
+      "A build note for PWSH Studio, from data modeling to interactive PowerShell-style navigation.",
   },
   {
     slug: "making-3d-websites-without-destroying-performance",
-    number: "LOG 006",
+    number: "NOTE 006",
     title: "Making 3D Websites Without Destroying Performance",
     category: "Frontend Experiments",
     date: "2026-02-16",
@@ -396,26 +392,26 @@ export const researchLogs: ResearchLog[] = [
       "The performance discipline behind using WebGL as atmosphere while keeping content, accessibility, and Core Web Vitals intact.",
   },
   {
-    slug: "smart-contracts-explained-through-orbital-systems",
-    number: "LOG 007",
+    slug: "smart-contracts-explained-through-system-boundaries",
+    number: "NOTE 007",
     title: "Smart Contracts Explained Through System Boundaries",
     category: "Blockchain Engineering",
     date: "2026-02-22",
     readingTime: "5 min read",
     tags: ["Solidity", "Protocols", "Mental Models"],
     excerpt:
-      "A space-inspired explanation of smart contract responsibilities, trust boundaries, and protocol gravity.",
+      "A practical explanation of smart contract responsibilities, trust boundaries, and protocol ownership.",
   },
   {
-    slug: "backend-architecture-behind-a-cinematic-portfolio",
-    number: "LOG 008",
-    title: "Backend Architecture Behind a Cinematic Portfolio",
+    slug: "backend-architecture-behind-interactive-workspace",
+    number: "NOTE 008",
+    title: "Backend Architecture Behind an Interactive Workspace",
     category: "Backend Architecture",
     date: "2026-03-01",
     readingTime: "6 min read",
     tags: ["Architecture", "Forms", "SEO"],
     excerpt:
-      "Even a portfolio benefits from real backend thinking: validation, routing, metadata, failure states, and data ownership.",
+      "Even a personal developer workspace benefits from real backend thinking: validation, routing, metadata, failure states, and data ownership.",
   },
 ]
 
@@ -424,7 +420,7 @@ export const blogCategories = [
   "Blockchain Engineering",
   "Frontend Experiments",
   "System Design",
-  "Space-Inspired Interfaces",
+  "PowerShell-Inspired Interfaces",
   "Developer Philosophy",
 ]
 

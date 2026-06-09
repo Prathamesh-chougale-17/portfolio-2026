@@ -6,7 +6,7 @@ export function BackendFlow() {
       <div
         aria-hidden="true"
         className="absolute top-1/2 right-8 left-8 h-px bg-cyan-300/25"
-        style={{ animation: "pulse-signal 3.4s ease-in-out infinite" }}
+        style={{ animation: "pulse-flow 3.4s ease-in-out infinite" }}
       />
       <ol className="relative grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {backendFlow.map((node, index) => (

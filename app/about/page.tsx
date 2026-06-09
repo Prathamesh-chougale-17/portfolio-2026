@@ -3,7 +3,7 @@ import { profile } from "@/data/event-horizon"
 import { pageMetadata } from "@/lib/seo"
 
 export const metadata = pageMetadata({
-  title: "About - Terminal Profile",
+  title: "About - PWSH Profile",
   description: profile.secondaryCopy,
   path: "/about",
 })

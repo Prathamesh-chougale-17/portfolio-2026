@@ -2,23 +2,23 @@
 
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, RadioTower, Send, ShieldCheck } from "lucide-react"
+import { Loader2, Mail, Send, ShieldCheck } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
 import {
   contactSchema,
   priorityLevels,
-  signalTypes,
+  requestTypes,
   type ContactPayload,
 } from "@/lib/contact"
 import { cn } from "@/lib/utils"
 
 type SuccessState = {
-  transmissionId: string
+  requestId: string
 }
 
-export function TransmissionForm() {
+export function MessageForm() {
   const [success, setSuccess] = useState<SuccessState | null>(null)
   const [serverError, setServerError] = useState("")
   const {
@@ -29,9 +29,9 @@ export function TransmissionForm() {
   } = useForm<ContactPayload>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
-      signalType: "Backend System",
+      requestType: "Backend System",
       priority: "Medium",
-      orbitCheck: "",
+      website: "",
     },
   })
 
@@ -47,16 +47,16 @@ export function TransmissionForm() {
 
     const payload = (await response.json()) as {
       ok?: boolean
-      transmissionId?: string
+      requestId?: string
       error?: string
     }
 
-    if (!response.ok || !payload.ok || !payload.transmissionId) {
-      setServerError(payload.error ?? "Signal failed. Please try again.")
+    if (!response.ok || !payload.ok || !payload.requestId) {
+      setServerError(payload.error ?? "Message failed. Please try again.")
       return
     }
 
-    setSuccess({ transmissionId: payload.transmissionId })
+    setSuccess({ requestId: payload.requestId })
     reset()
   }
 
@@ -73,7 +73,7 @@ export function TransmissionForm() {
             <ShieldCheck className="size-5" />
           </div>
           <h2 className="mt-5 font-heading text-3xl font-semibold text-slate-50">
-            SIGNAL SENT
+            MESSAGE DELIVERED
           </h2>
           <dl className="mt-6 grid gap-3 font-mono text-xs tracking-[0.16em] uppercase">
             <div className="border border-white/10 bg-black/20 p-3">
@@ -83,10 +83,8 @@ export function TransmissionForm() {
               </dd>
             </div>
             <div className="border border-white/10 bg-black/20 p-3">
-              <dt className="text-slate-500">Transmission ID</dt>
-              <dd className="mt-1 text-emerald-100">
-                {success.transmissionId}
-              </dd>
+              <dt className="text-slate-500">Request ID</dt>
+              <dd className="mt-1 text-emerald-100">{success.requestId}</dd>
             </div>
             <div className="border border-white/10 bg-black/20 p-3">
               <dt className="text-slate-500">Status</dt>
@@ -97,7 +95,7 @@ export function TransmissionForm() {
             className="mt-6 bg-emerald-300 text-slate-950 hover:bg-emerald-200"
             onClick={() => setSuccess(null)}
           >
-            Send another signal
+            Send another message
           </Button>
         </div>
       </div>
@@ -110,9 +108,9 @@ export function TransmissionForm() {
       className="rounded-lg border border-cyan-300/15 bg-[#050816]/78 p-4 sm:p-6"
     >
       <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-        <RadioTower className="size-5 text-cyan-200" />
+        <Mail className="size-5 text-cyan-200" />
         <p className="font-mono text-xs tracking-[0.18em] text-slate-300 uppercase">
-          Signal console
+          Message console
         </p>
       </div>
 
@@ -121,7 +119,7 @@ export function TransmissionForm() {
         tabIndex={-1}
         autoComplete="off"
         className="hidden"
-        {...register("orbitCheck")}
+        {...register("website")}
       />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -147,9 +145,9 @@ export function TransmissionForm() {
             className={fieldClass}
           />
         </Field>
-        <Field label="Signal Type" error={errors.signalType?.message}>
-          <select {...register("signalType")} className={fieldClass}>
-            {signalTypes.map((type) => (
+        <Field label="Request Type" error={errors.requestType?.message}>
+          <select {...register("requestType")} className={fieldClass}>
+            {requestTypes.map((type) => (
               <option key={type}>{type}</option>
             ))}
           </select>
@@ -180,7 +178,7 @@ export function TransmissionForm() {
           <textarea
             {...register("message")}
             rows={6}
-            placeholder="Tell me about the mission, constraints, stack, timeline, and what success should look like."
+            placeholder="Tell me about the project, constraints, stack, timeline, and what success should look like."
             className={cn(fieldClass, "min-h-36 resize-y")}
           />
         </Field>
@@ -202,7 +200,7 @@ export function TransmissionForm() {
         ) : (
           <Send className="size-4" />
         )}
-        Send Transmission
+        Send Message
       </Button>
     </form>
   )

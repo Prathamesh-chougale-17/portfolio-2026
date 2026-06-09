@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Command, FileText, Menu, Satellite, X } from "lucide-react"
+import { Command, FileText, Menu, X } from "lucide-react"
 import { useState } from "react"
 
 import { Icons } from "@/components/icons"
@@ -26,14 +26,14 @@ export function Navbar({ onOpenTerminal }: { onOpenTerminal: () => void }) {
       >
         <Link href="/" className="group flex items-center gap-3">
           <span className="flex size-9 items-center justify-center border border-cyan-300/40 bg-cyan-300/10 text-cyan-200">
-            <Satellite className="size-4" />
+            <Command className="size-4" />
           </span>
           <span className="min-w-0">
             <span className="block font-heading text-sm font-semibold tracking-[0.22em] text-slate-50 uppercase">
-              Event Horizon OS
+              PWSH Studio
             </span>
             <span className="hidden font-mono text-[10px] tracking-[0.2em] text-cyan-200/70 uppercase sm:block">
-              Mission control portfolio
+              Developer workspace
             </span>
           </span>
         </Link>

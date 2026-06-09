@@ -1,7 +1,7 @@
 import { ExternalLink, ShieldCheck, Workflow } from "lucide-react"
 
 import { Icons } from "@/components/icons"
-import type { MissionProject } from "@/data/event-horizon"
+import type { PortfolioProject } from "@/data/event-horizon"
 
 const sections = [
   ["Problem Statement", "problem"],
@@ -15,7 +15,7 @@ const sections = [
   ["Lessons Learned", "lessonsLearned"],
 ] as const
 
-export function ProjectCaseStudy({ project }: { project: MissionProject }) {
+export function ProjectCaseStudy({ project }: { project: PortfolioProject }) {
   const GitHubIcon = Icons.gitHub
 
   return (
@@ -23,10 +23,10 @@ export function ProjectCaseStudy({ project }: { project: MissionProject }) {
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <p className="font-mono text-xs tracking-[0.24em] text-cyan-200 uppercase">
-            {project.signal} / {project.type}
+            {project.projectId} / {project.type}
           </p>
           <h1 className="mt-5 font-heading text-4xl font-semibold text-balance text-slate-50 sm:text-6xl">
-            {project.missionName}
+            {project.title}
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-9 text-slate-300">
             {project.description}
@@ -60,7 +60,7 @@ export function ProjectCaseStudy({ project }: { project: MissionProject }) {
           <div className="flex items-center gap-3">
             <Workflow className="size-5 text-cyan-200" />
             <p className="font-mono text-xs tracking-[0.18em] text-slate-300 uppercase">
-              Mission telemetry
+              Project summary
             </p>
           </div>
           <dl className="mt-6 grid gap-4">
@@ -74,10 +74,10 @@ export function ProjectCaseStudy({ project }: { project: MissionProject }) {
             </div>
             <div>
               <dt className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-                Coordinates
+                Project ID
               </dt>
               <dd className="mt-1 text-sm text-slate-100">
-                {project.coordinates}
+                {project.projectId}
               </dd>
             </div>
             <div>

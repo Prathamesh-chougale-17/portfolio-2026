@@ -2,14 +2,14 @@ import Link from "next/link"
 import { ArrowUpRight, ExternalLink } from "lucide-react"
 
 import { Icons } from "@/components/icons"
-import type { MissionProject } from "@/data/event-horizon"
+import type { PortfolioProject } from "@/data/event-horizon"
 import { cn } from "@/lib/utils"
 
 export function ProjectPlanet({
   project,
   index = 0,
 }: {
-  project: MissionProject
+  project: PortfolioProject
   index?: number
 }) {
   const GitHubIcon = Icons.gitHub
@@ -28,7 +28,7 @@ export function ProjectPlanet({
       <div className="relative">
         <div className="flex items-center justify-between gap-4">
           <span className="font-mono text-[10px] tracking-[0.2em] text-cyan-200 uppercase">
-            {project.signal}
+            {project.projectId}
           </span>
           <span className="rounded-full border border-white/10 px-2 py-1 font-mono text-[10px] tracking-[0.16em] text-slate-400 uppercase">
             {project.category}
@@ -36,7 +36,7 @@ export function ProjectPlanet({
         </div>
         <Link href={`/projects/${project.slug}`} className="mt-7 block">
           <h3 className="font-heading text-2xl font-semibold text-slate-50 transition group-hover:text-cyan-100">
-            {project.missionName}
+            {project.title}
           </h3>
         </Link>
         <p className="mt-2 font-mono text-xs tracking-[0.16em] text-violet-200 uppercase">
@@ -61,7 +61,7 @@ export function ProjectPlanet({
             className="inline-flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-cyan-200 uppercase transition hover:text-cyan-100"
           >
             <ArrowUpRight className="size-4" />
-            Open mission
+            Open project
           </Link>
           <div className="flex gap-2">
             {project.githubLink ? (
@@ -69,7 +69,7 @@ export function ProjectPlanet({
                 href={project.githubLink}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`${project.missionName} GitHub`}
+                aria-label={`${project.title} GitHub`}
                 className="text-slate-400 transition hover:text-cyan-100"
               >
                 <GitHubIcon className="size-4" />
@@ -80,7 +80,7 @@ export function ProjectPlanet({
                 href={project.liveLink}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`${project.missionName} live demo`}
+                aria-label={`${project.title} live demo`}
                 className="text-slate-400 transition hover:text-cyan-100"
               >
                 <ExternalLink className="size-4" />

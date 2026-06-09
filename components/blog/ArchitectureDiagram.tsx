@@ -1,7 +1,7 @@
 const steps = ["Request", "Validate", "Queue", "Persist", "Observe", "Respond"]
 
 export function ArchitectureDiagram({
-  title = "Mission Flow",
+  title = "System Flow",
 }: {
   title?: string
 }) {

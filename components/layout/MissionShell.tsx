@@ -12,7 +12,7 @@ import { PageTransition } from "@/components/layout/PageTransition"
 
 gsap.registerPlugin(ScrollTrigger)
 
-export function MissionShell({ children }: { children: React.ReactNode }) {
+export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const [terminalOpen, setTerminalOpen] = useState(false)
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function MissionShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-svh overflow-x-clip">
       <a
-        href="#mission-content"
+        href="#workspace-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[80] focus:bg-cyan-300 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-950"
       >
         Skip intro
@@ -137,7 +137,7 @@ export function MissionShell({ children }: { children: React.ReactNode }) {
       <div className="hud-grid pointer-events-none fixed inset-0 z-0 [mask-image:linear-gradient(to_bottom,black,transparent_80%)] opacity-45" />
       <Navbar onOpenTerminal={() => setTerminalOpen(true)} />
       <PageTransition />
-      <main id="mission-content" className="relative z-10">
+      <main id="workspace-content" className="relative z-10">
         {children}
       </main>
       <Footer />

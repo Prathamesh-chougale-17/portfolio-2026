@@ -23,33 +23,34 @@ const monoFont = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://event-horizon-os.local"),
+  metadataBase: new URL("https://pwsh-studio.local"),
   title: {
     default:
-      "Event Horizon Terminal - Backend, Blockchain & Full-Stack Developer Portfolio",
-    template: "%s | Event Horizon Terminal",
+      "PWSH Studio - Prathamesh Chougale, Backend & Blockchain Developer",
+    template: "%s | PWSH Studio",
   },
   description:
-    "A terminal-first portfolio app for Prathamesh Chougale, a backend-first full-stack and blockchain developer.",
+    "A PowerShell-inspired developer workspace for Prathamesh Chougale: backend systems, blockchain products, and polished web experiences.",
   keywords: [
     profile.name,
     "backend developer",
     "blockchain developer",
     "full-stack developer",
-    "Next.js portfolio",
-    "Event Horizon OS",
+    "Next.js developer workspace",
+    "PWSH Studio",
+    "PowerShell-inspired developer workspace",
   ],
   authors: [{ name: profile.name }],
   openGraph: {
-    title: "Event Horizon Terminal",
+    title: "PWSH Studio",
     description: profile.tagline,
     type: "website",
-    siteName: "Event Horizon Terminal",
+    siteName: "PWSH Studio",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Event Horizon Terminal",
+    title: "PWSH Studio",
     description: profile.tagline,
     images: ["/opengraph-image"],
   },

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const log = getResearchLog(slug)
 
-  if (!log) return { title: "Research Log Not Found" }
+  if (!log) return { title: "Engineering Note Not Found" }
 
   return {
     title: `${log.number} - ${log.title}`,

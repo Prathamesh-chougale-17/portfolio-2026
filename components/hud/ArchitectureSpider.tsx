@@ -177,7 +177,7 @@ export function ArchitectureSpider() {
     })
   ).filter((edge): edge is Edge => Boolean(edge))
 
-  const signalEdges = relationshipEdges
+  const scanEdges = relationshipEdges
     .filter((edge) => edge.selected)
     .slice(0, 9)
 
@@ -282,8 +282,8 @@ export function ArchitectureSpider() {
               ))}
 
               {!shouldReduceMotion
-                ? signalEdges.map((edge) => (
-                    <SignalPacket key={`packet-${edge.id}`} edge={edge} />
+                ? scanEdges.map((edge) => (
+                    <FlowPacket key={`packet-${edge.id}`} edge={edge} />
                   ))
                 : null}
             </motion.svg>
@@ -513,7 +513,7 @@ function AnimatedEdge({
   )
 }
 
-function SignalPacket({ edge }: { edge: Edge }) {
+function FlowPacket({ edge }: { edge: Edge }) {
   return (
     <motion.circle
       r="0.75"
@@ -548,7 +548,7 @@ function ActivityPanel({
   const events = [
     stack ? `Stack focus: ${stack}` : `Layer focus: ${layer.label}`,
     `Path: ${layer.flow.join(" -> ")}`,
-    `Signal: ${scanEnabled ? "live scan active" : "manual inspection"}`,
+    `Scan: ${scanEnabled ? "live scan active" : "manual inspection"}`,
   ]
 
   return (

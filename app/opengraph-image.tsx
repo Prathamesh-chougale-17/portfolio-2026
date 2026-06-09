@@ -33,7 +33,7 @@ export default function Image() {
         }}
       />
       <div style={{ fontSize: 82, fontWeight: 700, lineHeight: 0.95 }}>
-        Event Horizon OS
+        PWSH Studio
       </div>
       <div
         style={{
@@ -43,7 +43,7 @@ export default function Image() {
           letterSpacing: 2,
         }}
       >
-        Backend systems. Blockchain protocols. Frontend galaxies.
+        Backend systems. Blockchain products. Polished web experiences.
       </div>
     </div>,
     size

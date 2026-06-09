@@ -1,4 +1,4 @@
-import type { MissionProject } from "@/data/event-horizon"
+import type { PortfolioProject } from "@/data/event-horizon"
 
 import { ProjectPlanet } from "./ProjectPlanet"
 
@@ -6,7 +6,7 @@ export function ProjectGalaxy({
   projects,
   limit,
 }: {
-  projects: MissionProject[]
+  projects: PortfolioProject[]
   limit?: number
 }) {
   const visibleProjects =

@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Archive, BookOpen, RadioTower, Rocket } from "lucide-react"
+import { Archive, BookOpen, Mail, Rocket } from "lucide-react"
 import { motion } from "motion/react"
 
 import { SpaceCanvas } from "@/components/cinematic/SpaceCanvas"
-import { MissionStatus } from "@/components/hud/MissionStatus"
+import { WorkspaceStatus } from "@/components/hud/WorkspaceStatus"
 import { buttonVariants } from "@/components/ui/button"
 import { initSequence, profile } from "@/data/event-horizon"
 import { cn } from "@/lib/utils"
@@ -52,7 +52,7 @@ export function LaunchHero() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="max-w-5xl font-heading text-5xl leading-[0.95] font-semibold text-balance text-slate-50 sm:text-7xl lg:text-8xl">
-              Event Horizon OS
+              PWSH Studio
             </h1>
             <p className="mt-5 max-w-2xl font-mono text-sm tracking-[0.22em] text-cyan-200 uppercase">
               {profile.tagline}
@@ -66,14 +66,14 @@ export function LaunchHero() {
 
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
-                href="#featured-missions"
+                href="#featured-projects"
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "h-11 bg-cyan-300 text-slate-950 hover:bg-cyan-200"
                 )}
               >
                 <Rocket className="size-4" />
-                Explore Missions
+                Explore Projects
               </Link>
               <Link
                 href="/projects"
@@ -83,7 +83,7 @@ export function LaunchHero() {
                 )}
               >
                 <Archive className="size-4" />
-                Open Galactic Archive
+                Open Project Index
               </Link>
               <Link
                 href="/blog"
@@ -93,7 +93,7 @@ export function LaunchHero() {
                 )}
               >
                 <BookOpen className="size-4" />
-                Read Research Logs
+                Read Engineering Notes
               </Link>
               <Link
                 href="/contact"
@@ -102,8 +102,8 @@ export function LaunchHero() {
                   "h-11 border-yellow-300/25 bg-yellow-300/10 text-yellow-100 hover:bg-yellow-300/15"
                 )}
               >
-                <RadioTower className="size-4" />
-                Send Transmission
+                <Mail className="size-4" />
+                Send Message
               </Link>
             </div>
           </motion.div>
@@ -118,7 +118,7 @@ export function LaunchHero() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] tracking-[0.22em] text-cyan-200 uppercase">
-                Pilot identity
+                Developer profile
               </p>
               <h2 className="mt-2 font-heading text-2xl font-semibold text-slate-50">
                 {profile.name}
@@ -127,7 +127,7 @@ export function LaunchHero() {
             </div>
             <span className="size-3 rounded-full bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.9)]" />
           </div>
-          <MissionStatus />
+          <WorkspaceStatus />
           <div className="mt-5 grid grid-cols-2 gap-3">
             {profile.stats.map((stat) => (
               <div

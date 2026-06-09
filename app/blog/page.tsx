@@ -3,8 +3,8 @@ import { researchLogs } from "@/data/event-horizon"
 import { pageMetadata } from "@/lib/seo"
 
 export const metadata = pageMetadata({
-  title: "Research Logs - Terminal Archive",
-  description: `${researchLogs.length} terminal-rendered research logs on backend architecture, blockchain systems, frontend experiments, and product engineering.`,
+  title: "Research Notes - PWSH Studio",
+  description: `${researchLogs.length} research notes on backend architecture, blockchain systems, frontend experiments, and product engineering.`,
   path: "/blog",
 })
 

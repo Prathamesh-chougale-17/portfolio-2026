@@ -2,9 +2,9 @@ import { TerminalPortfolioApp } from "@/components/terminal/TerminalPortfolioApp
 import { pageMetadata } from "@/lib/seo"
 
 export const metadata = pageMetadata({
-  title: "Contact - Terminal Transmission",
+  title: "Contact - PWSH Studio",
   description:
-    "Send a terminal-native transmission for collaborations, backend systems, blockchain products, or ambitious digital experiences.",
+    "Start a conversation about collaborations, backend systems, blockchain products, or ambitious digital experiences.",
   path: "/contact",
 })
 

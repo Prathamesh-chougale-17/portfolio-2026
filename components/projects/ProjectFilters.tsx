@@ -25,7 +25,7 @@ export function ProjectFilters() {
         <div className="flex items-center gap-3 px-2">
           <Filter className="size-4 text-cyan-200" />
           <p className="font-mono text-xs tracking-[0.18em] text-slate-300 uppercase">
-            Mission filters
+            Project filters
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

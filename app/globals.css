@@ -184,7 +184,7 @@
   }
 }
 
-@keyframes pulse-signal {
+@keyframes pulse-flow {
   0%,
   100% {
     opacity: 0.45;

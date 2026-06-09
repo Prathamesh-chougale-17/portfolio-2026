@@ -1,4 +1,4 @@
-import { Activity, Database, RadioTower, ShieldCheck } from "lucide-react"
+import { Activity, Database, Mail, ShieldCheck } from "lucide-react"
 
 const rows = [
   {
@@ -20,14 +20,14 @@ const rows = [
     color: "text-violet-200",
   },
   {
-    label: "Transmission",
+    label: "Messages",
     value: "Open",
-    icon: RadioTower,
+    icon: Mail,
     color: "text-yellow-200",
   },
 ]
 
-export function MissionStatus() {
+export function WorkspaceStatus() {
   return (
     <div className="grid gap-3">
       {rows.map((row) => {

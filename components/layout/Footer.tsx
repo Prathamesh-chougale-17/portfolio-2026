@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { RadioTower } from "lucide-react"
+import { Command } from "lucide-react"
 
 import { Icons } from "@/components/icons"
 import { navItems, profile } from "@/data/event-horizon"
@@ -16,15 +16,15 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center border border-cyan-300/40 bg-cyan-300/10 text-cyan-200">
-              <RadioTower className="size-4" />
+              <Command className="size-4" />
             </span>
             <p className="font-heading text-lg font-semibold text-slate-50">
-              Event Horizon OS
+              PWSH Studio
             </p>
           </div>
           <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
-            {profile.tagline} A mission-control archive for backend systems,
-            blockchain protocols, frontend surfaces, and architecture
+            {profile.tagline} A focused developer workspace for backend
+            systems, blockchain products, frontend surfaces, and architecture
             experiments.
           </p>
         </div>
@@ -46,7 +46,7 @@ export function Footer() {
         </div>
         <div>
           <p className="font-mono text-xs tracking-[0.2em] text-cyan-200 uppercase">
-            Signal links
+            Links
           </p>
           <div className="mt-4 flex gap-2">
             <a

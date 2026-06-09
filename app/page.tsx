@@ -3,9 +3,9 @@ import { pageMetadata } from "@/lib/seo"
 
 export const metadata = pageMetadata({
   title:
-    "Event Horizon Terminal - Backend, Blockchain & Full-Stack Developer Portfolio",
+    "PWSH Studio - Backend, Blockchain & Product Engineering",
   description:
-    "A terminal-first portfolio app for backend systems, blockchain protocols, and full-stack product architecture.",
+    "A PowerShell-inspired developer workspace for backend systems, blockchain protocols, and full-stack product architecture.",
   path: "/",
 })
 

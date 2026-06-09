@@ -1,6 +1,6 @@
 import { Resend } from "resend"
 
-import { contactSchema, createTransmissionId } from "@/lib/contact"
+import { contactSchema, createRequestId } from "@/lib/contact"
 
 export async function POST(request: Request) {
   try {
@@ -12,13 +12,13 @@ export async function POST(request: Request) {
         {
           ok: false,
           error:
-            result.error.issues[0]?.message ?? "Invalid transmission payload.",
+            result.error.issues[0]?.message ?? "Invalid message payload.",
         },
         { status: 400 }
       )
     }
 
-    const transmissionId = createTransmissionId()
+    const requestId = createRequestId()
     const apiKey = process.env.RESEND_API_KEY
     const to = process.env.CONTACT_TO_EMAIL
 
@@ -27,14 +27,14 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from:
           process.env.CONTACT_FROM_EMAIL ??
-          "Event Horizon OS <onboarding@resend.dev>",
+          "PWSH Studio <onboarding@resend.dev>",
         to,
         subject: `[${result.data.priority}] ${result.data.subject}`,
         text: [
-          `Transmission ID: ${transmissionId}`,
+          `Request ID: ${requestId}`,
           `Name: ${result.data.name}`,
           `Email: ${result.data.email}`,
-          `Signal Type: ${result.data.signalType}`,
+          `Request Type: ${result.data.requestType}`,
           `Priority: ${result.data.priority}`,
           "",
           result.data.message,
@@ -45,12 +45,12 @@ export async function POST(request: Request) {
 
     return Response.json({
       ok: true,
-      transmissionId,
+      requestId,
       delivered: Boolean(apiKey && to),
     })
   } catch {
     return Response.json(
-      { ok: false, error: "Transmission route failed. Please try again." },
+      { ok: false, error: "Message delivery failed. Please try again." },
       { status: 500 }
     )
   }

@@ -82,12 +82,12 @@ const commandList = [
   "matrix",
   "clear matrix",
   "coffee",
-  "decrypt signal",
-  "sudo make-me-hireable",
+  "decode state",
+  "sudo ship-it",
   "easter-eggs",
   "history",
   "clear",
-  "sudo enter-black-hole",
+  "open workbench",
   "exit",
 ]
 
@@ -121,11 +121,11 @@ const terminalThemes: Record<
 }
 
 const eggHints = [
-  "sudo enter-black-hole",
+  "open workbench",
   "matrix",
   "coffee",
-  "decrypt signal",
-  "sudo make-me-hireable",
+  "decode state",
+  "sudo ship-it",
 ]
 
 const matrixLines = [
@@ -143,8 +143,8 @@ const BOOT_ENTRY: Entry = {
   time: "boot",
   variant: "system",
   lines: [
-    "Event Horizon OS terminal attached.",
-    "Telemetry stream online. Type help for available commands.",
+    "PWSH Studio shell attached.",
+    "Workspace output ready. Type help for available commands.",
   ],
 }
 
@@ -166,7 +166,7 @@ function id() {
 export function Terminal({ open, onOpenChange }: TerminalProps) {
   const [input, setInput] = useState("")
   const [entries, setEntries] = useState<Entry[]>(() => [BOOT_ENTRY])
-  const [singularity, setSingularity] = useState(false)
+  const [workbenchOpen, setWorkbenchOpen] = useState(false)
   const [history, setHistory] = useState<string[]>([])
   const [, setHistoryIndex] = useState<number | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -236,7 +236,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
       top: outputRef.current.scrollHeight,
       behavior: "smooth",
     })
-  }, [entries, singularity, matrixMode])
+  }, [entries, workbenchOpen, matrixMode])
 
   function scrollTo(id: string) {
     document
@@ -260,19 +260,19 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
     const project = projects.find(
       (item) =>
         item.slug === query ||
-        item.missionName.toLowerCase() === query ||
-        item.missionName.toLowerCase().includes(query)
+        item.title.toLowerCase() === query ||
+        item.title.toLowerCase().includes(query)
     )
 
     if (!project) {
       return [
-        `Mission not found for "${query}".`,
+        `Project not found for "${query}".`,
         "Try: project carbon track, project bounty quest, or projects --backend.",
       ]
     }
 
     return [
-      `${project.signal} / ${project.missionName}`,
+      `${project.projectId} / ${project.title}`,
       `Type: ${project.type}`,
       `Stack: ${project.stack.slice(0, 7).join(", ")}`,
       `Route: /projects/${project.slug}`,
@@ -316,19 +316,19 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
     const project = projects.find(
       (item) =>
         item.slug === query ||
-        item.missionName.toLowerCase() === query ||
-        item.missionName.toLowerCase().includes(query)
+        item.title.toLowerCase() === query ||
+        item.title.toLowerCase().includes(query)
     )
 
     if (!project) {
       return [
-        `No mission trace found for "${query}".`,
-        "Use projects to inspect available mission names.",
+        `No project trace found for "${query}".`,
+        "Use projects to inspect available project names.",
       ]
     }
 
     return [
-      `${project.signal} trace / ${project.missionName}`,
+      `${project.projectId} trace / ${project.title}`,
       project.architecture,
       `Backend decisions:\n${project.backendDecisions
         .map((decision) => `- ${decision}`)
@@ -362,7 +362,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
       }
       setTheme(nextTheme as TerminalTheme)
       return {
-        lines: [`Terminal theme set to ${nextTheme}.`],
+        lines: [`Workspace theme set to ${nextTheme}.`],
         variant: "success",
       }
     }
@@ -372,7 +372,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
       const allowed = ["/", "/projects", "/blog", "/contact"]
       if (!allowed.includes(route)) {
         return {
-          lines: [`Route ${route} is not in the mission map.`],
+          lines: [`Route ${route} is not in the workspace map.`],
           variant: "error",
         }
       }
@@ -388,18 +388,18 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
         return {
           lines: [
             "Core: whoami, status, stack-map, architecture, projects, blog, contact.",
-            "Trace: trace request, trace <mission-name>, project <mission-name>.",
+            "Trace: trace request, trace <project-name>, project <project-name>.",
             "Data: skills, skills --json, cat profile.json, scan stack.",
             "Navigation: open /projects, open /blog, open /contact.",
-            "Terminal: theme cyan|amber|violet, matrix, clear matrix, history, clear, exit.",
+            "Shell: theme cyan|amber|violet, matrix, clear matrix, history, clear, exit.",
             "Easter eggs: easter-eggs for hints.",
           ],
         }
       case "whoami":
         return {
           lines: [
-            "You are viewing the mission-control portfolio of a backend-first full-stack and blockchain developer.",
-            "Identity vector: APIs, databases, blockchain protocols, system architecture, cinematic frontend interfaces.",
+            "You are viewing the PWSH Studio workspace of a backend-first full-stack and blockchain developer.",
+            "Focus: APIs, databases, blockchain protocols, system architecture, and polished frontend interfaces.",
           ],
           variant: "success",
         }
@@ -408,7 +408,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
           lines: [
             `${profile.name} / ${profile.role}`,
             "Default lens: backend reliability first, UI clarity second, cinematic motion only when it explains state.",
-            `Signal: ${profile.alternativeHeroLine}`,
+            `Line: ${profile.alternativeHeroLine}`,
           ],
           variant: "success",
         }
@@ -419,9 +419,9 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
             "BLOCKCHAIN NODE: SYNCHRONIZED",
             "FRONTEND INTERFACE: RENDERED",
             `ARCHITECTURE SPIDER: ${architectureLayers.length} LAYERS MAPPED`,
-            `EASTER EGGS: ${unlockedEggs.length}/${eggHints.length} FOUND`,
+            `EXTRAS UNLOCKED: ${unlockedEggs.length}/${eggHints.length}`,
             `LATENCY: ${latency}ms`,
-            `MISSIONS INDEXED: ${projects.length}`,
+            `PROJECTS INDEXED: ${projects.length}`,
           ],
           variant: "success",
         }
@@ -450,25 +450,25 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
           lines: [JSON.stringify({ skills }, null, 2)],
         }
       case "projects":
-        scrollTo("featured-missions")
+        scrollTo("featured-projects")
         return {
           lines: [
-            `Opening mission archive: ${projects.length} systems, protocols, interfaces, and experiments.`,
+            `Opening project index: ${projects.length} systems, protocols, interfaces, and experiments.`,
             projects
               .slice(0, 8)
-              .map((project) => `${project.signal}: ${project.missionName}`)
+              .map((project) => `${project.projectId}: ${project.title}`)
               .join("\n"),
           ],
           variant: "success",
         }
       case "projects --backend":
-        scrollTo("featured-missions")
+        scrollTo("featured-projects")
         return {
           lines: [
             "Backend archive opened.",
             backendProjects
               .slice(0, 8)
-              .map((project) => `${project.signal}: ${project.missionName}`)
+              .map((project) => `${project.projectId}: ${project.title}`)
               .join("\n"),
           ],
           variant: "success",
@@ -479,7 +479,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
           lines: [
             "Blockchain systems opened. Chain tooling is mapped through the Chain Adapter layer.",
             blockchainProjects
-              .map((project) => `${project.signal}: ${project.missionName}`)
+              .map((project) => `${project.projectId}: ${project.title}`)
               .join("\n"),
           ],
           variant: "success",
@@ -489,7 +489,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
         scrollTo("research-logs")
         return {
           lines: [
-            "Research Logs opened.",
+            "Engineering notes opened.",
             researchLogs
               .slice(0, 6)
               .map((log) => `${log.number}: ${log.title}`)
@@ -498,10 +498,10 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
           variant: "success",
         }
       case "contact":
-        scrollTo("contact-transmission")
+        scrollTo("contact-message")
         return {
           lines: [
-            "Deep Space Transmission console located.",
+            "Message console located.",
             "Route: Browser -> API -> Mail Service -> Developer Inbox.",
           ],
           variant: "success",
@@ -513,17 +513,17 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
             "projects/",
             "blog/",
             "contact/",
-            "singularity-lab/",
+            "pwsh-labs/",
             "telemetry.json",
             "profile.json",
           ],
         }
       case "pwd":
-        return { lines: ["/event-horizon-os/mission-control"] }
+        return { lines: ["/pwsh-studio/workspace"] }
       case "date":
         return { lines: [new Date().toString()] }
       case "uptime":
-        return { lines: [`Terminal uptime: ${uptime}s`] }
+        return { lines: [`Workspace uptime: ${uptime}s`] }
       case "ping":
         return {
           lines: [`PING developer-core: seq=1 ttl=64 time=${latency}ms`],
@@ -580,7 +580,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
         return {
           lines: [
             "Matrix telemetry enabled.",
-            "The terminal will now show a deterministic system-rain panel. No actual system access, just a visual mode.",
+            "The workspace will now show a deterministic system-rain panel. No actual system access, just a visual mode.",
           ],
           variant: "egg",
         }
@@ -599,17 +599,17 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
           ],
           variant: "egg",
         }
-      case "decrypt signal":
-        unlockEgg("decrypt signal")
+      case "decode state":
+        unlockEgg("decode state")
         return {
           lines: [
-            "Signal decrypted:",
+            "State decoded:",
             "Good backend engineering is mostly making invisible state legible before it becomes a production mystery.",
           ],
           variant: "egg",
         }
-      case "sudo make-me-hireable":
-        unlockEgg("sudo make-me-hireable")
+      case "sudo ship-it":
+        unlockEgg("sudo ship-it")
         return {
           lines: [
             "Privilege accepted.",
@@ -637,14 +637,14 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
             ? history.map((item, index) => `${index + 1}  ${item}`)
             : ["No command history yet."],
         }
-      case "sudo enter-black-hole":
-        setSingularity(true)
-        unlockEgg("sudo enter-black-hole")
+      case "open workbench":
+        setWorkbenchOpen(true)
+        unlockEgg("open workbench")
         return {
           lines: [
-            "Access granted.",
-            "Singularity Lab mounted at /event-horizon-os/singularity-lab.",
-            "Workbench commands unlocked: stack-map, trace request, matrix, decrypt signal.",
+            "Workbench opened.",
+            "PWSH Labs is ready for experiments and system notes.",
+            "Useful commands: stack-map, trace request, matrix, decode state.",
           ],
           variant: "egg",
         }
@@ -661,7 +661,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
         return {
           lines: [
             `Command not recognized: ${command}`,
-            "Type help for the mission command index.",
+            "Type help for the workspace command index.",
           ],
           variant: "error",
         }
@@ -678,7 +678,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
 
     pushEntry({
       command: trimmed,
-      lines: ["routing command through mission bus..."],
+      lines: ["routing command through workspace bus..."],
       variant: "system",
     })
 
@@ -756,7 +756,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
         <section
           role="dialog"
           aria-modal="true"
-          aria-label="Event Horizon OS command terminal"
+          aria-label="PWSH Studio command shell"
           className={cn(
             "hud-panel flex max-h-[calc(100svh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg transition duration-300 sm:max-h-[calc(100svh-3rem)]",
             themeConfig.glow,
@@ -770,10 +770,10 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
               <Command className={cn("size-4", themeConfig.prompt)} />
               <div>
                 <p className="font-mono text-xs tracking-[0.18em] text-slate-200 uppercase">
-                  Event Horizon Shell
+                  PWSH Studio Shell
                 </p>
                 <p className="mt-1 font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-                  /mission-control/live-terminal
+                  /pwsh-studio/workspace
                 </p>
               </div>
             </div>
@@ -834,10 +834,10 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
                   <span className="text-slate-600"> ...</span>
                 </p>
               ) : null}
-              {singularity ? (
+              {workbenchOpen ? (
                 <div className="mt-5 border border-violet-300/30 bg-violet-400/10 p-4">
                   <p className="font-mono text-xs tracking-[0.18em] text-violet-100 uppercase">
-                    Singularity Lab
+                    PWSH Labs
                   </p>
                   <p className="mt-3 leading-7 text-slate-300">
                     Experimental workbench for protocol visualizers,
@@ -846,7 +846,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
                     visible.
                   </p>
                   <p className="mt-3 font-mono text-[11px] tracking-[0.12em] text-violet-100 uppercase">
-                    Try: stack-map / trace request / matrix / decrypt signal
+                    Try: stack-map / trace request / matrix / decode state
                   </p>
                 </div>
               ) : null}
@@ -887,7 +887,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
               <StatusRow
                 icon={KeyRound}
                 label="Access"
-                value={singularity ? "Lab" : "Base"}
+                value={workbenchOpen ? "Lab" : "Base"}
               />
               <div className="mt-5 border border-white/10 bg-white/[0.035] p-3">
                 <p className="font-mono text-[10px] tracking-[0.16em] text-cyan-200 uppercase">
@@ -920,7 +920,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
 
           <form onSubmit={onSubmit} className="border-t border-white/10 p-4">
             <label className="sr-only" htmlFor="terminal-command">
-              Terminal command
+              PWSH command
             </label>
             {suggestions.length ? (
               <div className="mb-2 flex flex-wrap gap-2">
@@ -943,7 +943,7 @@ export function Terminal({ open, onOpenChange }: TerminalProps) {
               )}
             >
               <span className={cn("font-mono", themeConfig.prompt)}>
-                eh-os:~$
+                PS C:\Prathamesh&gt;
               </span>
               <input
                 ref={inputRef}

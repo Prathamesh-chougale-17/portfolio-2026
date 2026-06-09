@@ -8,13 +8,13 @@ import { useForm } from "react-hook-form"
 import {
   contactSchema,
   priorityLevels,
-  signalTypes,
+  requestTypes,
   type ContactPayload,
 } from "@/lib/contact"
 import { cn } from "@/lib/utils"
 
 type SuccessState = {
-  transmissionId: string
+  requestId: string
 }
 
 export function TerminalContactForm() {
@@ -28,9 +28,9 @@ export function TerminalContactForm() {
   } = useForm<ContactPayload>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
-      signalType: "Backend System",
+      requestType: "Backend System",
       priority: "Medium",
-      orbitCheck: "",
+      website: "",
     },
   })
 
@@ -46,16 +46,16 @@ export function TerminalContactForm() {
 
     const payload = (await response.json()) as {
       ok?: boolean
-      transmissionId?: string
+      requestId?: string
       error?: string
     }
 
-    if (!response.ok || !payload.ok || !payload.transmissionId) {
-      setServerError(payload.error ?? "Signal failed. Please try again.")
+    if (!response.ok || !payload.ok || !payload.requestId) {
+      setServerError(payload.error ?? "Message failed. Please try again.")
       return
     }
 
-    setSuccess({ transmissionId: payload.transmissionId })
+    setSuccess({ requestId: payload.requestId })
     reset()
   }
 
@@ -65,12 +65,12 @@ export function TerminalContactForm() {
         <div className="flex items-center gap-3">
           <ShieldCheck className="size-5 text-emerald-200" />
           <p className="text-xs tracking-[0.18em] text-emerald-100 uppercase">
-            signal delivered
+            message delivered
           </p>
         </div>
         <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
-          <TerminalDatum label="route" value="browser -> api -> inbox" />
-          <TerminalDatum label="transmission" value={success.transmissionId} />
+          <TerminalDatum label="path" value="browser -> api -> inbox" />
+          <TerminalDatum label="request id" value={success.requestId} />
           <TerminalDatum label="status" value="delivered" />
         </dl>
         <button
@@ -78,7 +78,7 @@ export function TerminalContactForm() {
           onClick={() => setSuccess(null)}
           className="mt-5 border border-emerald-300/35 bg-emerald-300/10 px-3 py-2 text-[10px] tracking-[0.16em] text-emerald-100 uppercase transition hover:bg-emerald-300/15"
         >
-          send another signal
+          send another message
         </button>
       </div>
     )
@@ -93,10 +93,10 @@ export function TerminalContactForm() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div>
           <p className="text-xs tracking-[0.18em] text-cyan-100 uppercase">
-            /contact/transmission
+            /contact/message
           </p>
           <p className="mt-1 text-[11px] text-slate-500">
-            validated through contactSchema and delivered by /api/contact
+            validated on submit and delivered through /api/contact
           </p>
         </div>
         <span className="border border-emerald-300/25 bg-emerald-300/10 px-2 py-1 text-[10px] tracking-[0.14em] text-emerald-100 uppercase">
@@ -109,7 +109,7 @@ export function TerminalContactForm() {
         tabIndex={-1}
         autoComplete="off"
         className="hidden"
-        {...register("orbitCheck")}
+        {...register("website")}
       />
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -135,9 +135,9 @@ export function TerminalContactForm() {
             className={fieldClass}
           />
         </TerminalField>
-        <TerminalField label="signal type" error={errors.signalType?.message}>
-          <select {...register("signalType")} className={fieldClass}>
-            {signalTypes.map((type) => (
+        <TerminalField label="request type" error={errors.requestType?.message}>
+          <select {...register("requestType")} className={fieldClass}>
+            {requestTypes.map((type) => (
               <option key={type}>{type}</option>
             ))}
           </select>
@@ -168,7 +168,7 @@ export function TerminalContactForm() {
           <textarea
             {...register("message")}
             rows={6}
-            placeholder="Mission, constraints, stack, timeline, and what success should look like."
+            placeholder="Project idea, constraints, stack, timeline, and what success should look like."
             className={cn(fieldClass, "min-h-36 resize-y")}
           />
         </TerminalField>
@@ -190,7 +190,7 @@ export function TerminalContactForm() {
         ) : (
           <Send className="size-4" />
         )}
-        transmit signal
+        send message
       </button>
     </form>
   )

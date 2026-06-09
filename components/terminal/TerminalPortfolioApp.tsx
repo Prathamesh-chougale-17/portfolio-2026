@@ -52,7 +52,7 @@ import {
   projects,
   researchLogs,
   skills,
-  type MissionProject,
+  type PortfolioProject,
   type ResearchLog,
 } from "@/data/event-horizon"
 import { cn } from "@/lib/utils"
@@ -92,9 +92,9 @@ type RouteState = {
 type TerminalTheme = "cyan" | "amber" | "violet"
 
 const INITIAL_STAMP = "--:--:--"
-const PENDING_COMMAND_KEY = "event-horizon-terminal-pending-command"
-const SIDEBAR_STORAGE_KEY = "event-horizon-terminal-sidebar-open"
-const THEME_STORAGE_KEY = "event-horizon-terminal-theme"
+const PENDING_COMMAND_KEY = "pwsh-studio-pending-command"
+const SIDEBAR_STORAGE_KEY = "pwsh-studio-sidebar-open"
+const THEME_STORAGE_KEY = "pwsh-studio-theme"
 let rememberedInspectorOpen = false
 let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
@@ -120,14 +120,14 @@ const routeItems = [
     href: "/blog",
     command: "open /blog",
     icon: BookOpen,
-    meta: `${researchLogs.length} logs`,
+    meta: `${researchLogs.length} notes`,
   },
   {
     label: "Contact",
     href: "/contact",
     command: "open /contact",
     icon: Mail,
-    meta: "signal",
+    meta: "message",
   },
 ]
 
@@ -156,7 +156,8 @@ const commandList = [
   "projects --blockchain",
   "project ",
   "blog",
-  "logs",
+  "notes",
+  "note ",
   "contact",
   "open /",
   "open /about",
@@ -174,16 +175,20 @@ const commandList = [
   "matrix",
   "clear matrix",
   "coffee",
-  "decrypt signal",
-  "sudo make-me-hireable",
-  "sudo enter-black-hole",
+  "decode state",
+  "sudo ship-it",
+  "open workbench",
   "easter-eggs",
   "history",
   "clear",
 ]
 
 const allCommandShortcuts = commandList.map((command) =>
-  command === "project " ? "project oorja-ai" : command
+  command === "project "
+    ? "project oorja-ai"
+    : command === "note "
+      ? "note production reliability"
+      : command
 )
 
 const terminalThemes: Record<
@@ -248,11 +253,11 @@ function storeSidebarOpen(value: boolean) {
 }
 
 const eggHints = [
-  "sudo enter-black-hole",
+  "open workbench",
   "matrix",
   "coffee",
-  "decrypt signal",
-  "sudo make-me-hireable",
+  "decode state",
+  "sudo ship-it",
 ]
 
 const matrixLines = [
@@ -333,8 +338,8 @@ function resolveRoute(
   if (path.startsWith("/blog/")) {
     const selectedSlug = path.replace("/blog/", "")
     return {
-      command: `log ${selectedSlug}`,
-      label: "Research Log",
+      command: `note ${selectedSlug}`,
+      label: "Engineering Note",
       path,
       selectedSlug,
       view: "blog-detail",
@@ -375,8 +380,8 @@ function findProject(query: string) {
   return projects.find(
     (project) =>
       project.slug === normalized ||
-      project.missionName.toLowerCase() === normalized ||
-      project.missionName.toLowerCase().includes(normalized)
+      project.title.toLowerCase() === normalized ||
+      project.title.toLowerCase().includes(normalized)
   )
 }
 
@@ -411,7 +416,7 @@ export function TerminalPortfolioApp({
   const [sidebarOpen, setSidebarOpen] = useState(() => rememberedSidebarOpen)
   const [theme, setTheme] = useState<TerminalTheme>(() => rememberedTerminalTheme)
   const [matrixMode, setMatrixMode] = useState(false)
-  const [singularity, setSingularity] = useState(false)
+  const [workbenchOpen, setWorkbenchOpen] = useState(false)
   const [unlockedEggs, setUnlockedEggs] = useState<string[]>([])
   const themeConfig = terminalThemes[theme]
 
@@ -511,7 +516,7 @@ export function TerminalPortfolioApp({
     if (!isValidRoute(target)) {
       appendEntry({
         command,
-        lines: [`Route ${target} is not in the terminal map.`],
+      lines: [`Route ${target} is not in the workspace map.`],
         variant: "error",
       })
       return
@@ -520,7 +525,7 @@ export function TerminalPortfolioApp({
     if (target === pathname) {
       appendEntry({
         command,
-        lines: [`Already mounted at ${target}.`],
+        lines: [`Already open at ${target}.`],
         variant: "system",
       })
       return
@@ -647,7 +652,7 @@ export function TerminalPortfolioApp({
         appendEntry({
           command,
           lines: [
-            `Mission not found for "${query}".`,
+            `Project not found for "${query}".`,
             "Try: project oorja ai, project carbon track, or projects --backend.",
           ],
           variant: "error",
@@ -658,18 +663,22 @@ export function TerminalPortfolioApp({
       return
     }
 
-    if (normalized === "blog" || normalized === "logs") {
+    if (
+      normalized === "blog" ||
+      normalized === "logs" ||
+      normalized === "notes"
+    ) {
       navigateTo("/blog", command)
       return
     }
 
-    if (normalized.startsWith("log ")) {
-      const query = command.replace(/^log\s+/i, "")
+    if (normalized.startsWith("log ") || normalized.startsWith("note ")) {
+      const query = command.replace(/^(log|note)\s+/i, "")
       const log = findResearchLog(query)
       if (!log) {
         appendEntry({
           command,
-          lines: [`Research log not found for "${query}".`],
+          lines: [`Engineering note not found for "${query}".`],
           variant: "error",
         })
         return
@@ -701,7 +710,7 @@ export function TerminalPortfolioApp({
       applyTheme(nextTheme as TerminalTheme)
       appendEntry({
         command,
-        lines: [`Terminal theme set to ${nextTheme}.`],
+        lines: [`Workspace theme set to ${nextTheme}.`],
         variant: "success",
       })
       return
@@ -712,11 +721,11 @@ export function TerminalPortfolioApp({
         appendEntry({
           command,
           lines: [
-            "Navigation: home, about, projects, project <name>, blog, log <name>, contact.",
+            "Navigation: home, about, projects, project <name>, blog, note <name>, contact.",
             "Routes: open /about, open /projects, open /projects/<slug>, open /blog/<slug>.",
             "Data: whoami, status, skills, architecture, projects --backend, projects --blockchain.",
-            "Terminal: theme cyan|amber|violet, history, clear, matrix, clear matrix.",
-            "Easter eggs: easter-eggs for hints.",
+            "Shell: theme cyan|amber|violet, history, clear, matrix, clear matrix.",
+            "Extras: easter-eggs for hidden commands.",
           ],
         })
         return
@@ -735,13 +744,14 @@ export function TerminalPortfolioApp({
         appendEntry({
           command,
           lines: [
-            "TERMINAL APP: PRIMARY SURFACE",
+            "PWSH STUDIO: PRIMARY WORKSPACE",
+            "SHELL: POWERSHELL-INSPIRED",
             `ROUTE: ${routeState.path}`,
             `PROJECTS INDEXED: ${projects.length}`,
-            `RESEARCH LOGS: ${researchLogs.length}`,
+            `ENGINEERING NOTES: ${researchLogs.length}`,
             `ARCHITECTURE LAYERS: ${architectureLayers.length}`,
             `LATENCY: ${latency}ms`,
-            `EASTER EGGS: ${unlockedEggs.length}/${eggHints.length}`,
+            `EXTRAS UNLOCKED: ${unlockedEggs.length}/${eggHints.length}`,
           ],
           variant: "success",
         })
@@ -770,7 +780,7 @@ export function TerminalPortfolioApp({
               projects={projects.filter((project) =>
                 project.categories.includes("Backend")
               )}
-              title="Backend missions"
+              title="Backend systems"
             />
           ),
           variant: "success",
@@ -785,7 +795,7 @@ export function TerminalPortfolioApp({
               projects={projects.filter((project) =>
                 project.categories.includes("Blockchain")
               )}
-              title="Blockchain missions"
+              title="Blockchain systems"
             />
           ),
           variant: "success",
@@ -812,12 +822,12 @@ export function TerminalPortfolioApp({
         appendEntry({ command, lines: [new Date().toString()] })
         return
       case "uptime":
-        appendEntry({ command, lines: [`Terminal uptime: ${uptime}s`] })
+        appendEntry({ command, lines: [`Workspace uptime: ${uptime}s`] })
         return
       case "ping":
         appendEntry({
           command,
-          lines: [`PING terminal-core: seq=1 ttl=64 time=${latency}ms`],
+          lines: [`PING pwsh-core: seq=1 ttl=64 time=${latency}ms`],
           variant: "success",
         })
         return
@@ -844,24 +854,24 @@ export function TerminalPortfolioApp({
           command,
           lines: [
             "Brewing developer fuel...",
-            "Result: +18 focus, +7 bug tolerance, terminal stays online.",
+            "Result: +18 focus, +7 bug tolerance, workspace stays online.",
           ],
           variant: "egg",
         })
         return
-      case "decrypt signal":
-        unlockEgg("decrypt signal")
+      case "decode state":
+        unlockEgg("decode state")
         appendEntry({
           command,
           lines: [
-            "Signal decrypted:",
+            "State decoded:",
             "Good backend engineering is mostly making invisible state legible before it becomes a production mystery.",
           ],
           variant: "egg",
         })
         return
-      case "sudo make-me-hireable":
-        unlockEgg("sudo make-me-hireable")
+      case "sudo ship-it":
+        unlockEgg("sudo ship-it")
         appendEntry({
           command,
           lines: [
@@ -871,15 +881,15 @@ export function TerminalPortfolioApp({
           variant: "egg",
         })
         return
-      case "sudo enter-black-hole":
-        setSingularity(true)
-        unlockEgg("sudo enter-black-hole")
+      case "open workbench":
+        setWorkbenchOpen(true)
+        unlockEgg("open workbench")
         appendEntry({
           command,
           lines: [
-            "Access granted.",
-            "Singularity Lab mounted inside the terminal shell.",
-            "Workbench commands: architecture, matrix, decrypt signal.",
+            "Workbench opened.",
+            "PWSH Labs is ready for experiments and system notes.",
+            "Useful commands: architecture, matrix, decode state.",
           ],
           variant: "egg",
         })
@@ -888,7 +898,7 @@ export function TerminalPortfolioApp({
         appendEntry({
           command,
           lines: [
-            `Found: ${unlockedEggs.length}/${eggHints.length}`,
+            `Extras unlocked: ${unlockedEggs.length}/${eggHints.length}`,
             eggHints
               .map((hint) =>
                 unlockedEggs.includes(hint)
@@ -917,7 +927,7 @@ export function TerminalPortfolioApp({
           command,
           lines: [
             `Command not recognized: ${command}`,
-            "Type help for the terminal command index.",
+            "Type help for the PWSH command index.",
           ],
           variant: "error",
         })
@@ -1024,15 +1034,15 @@ export function TerminalPortfolioApp({
               "hud-panel flex min-h-[72svh] flex-col overflow-hidden rounded-lg lg:h-full lg:min-h-0",
               themeConfig.glow
             )}
-            aria-label="Terminal output"
+            aria-label="PWSH output"
             onWheel={onTerminalPanelWheel}
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <div className="flex items-center gap-3">
-                <TerminalSquare className={cn("size-5", themeConfig.text)} />
+                  <TerminalSquare className={cn("size-5", themeConfig.text)} />
                 <div>
                   <p className="font-mono text-xs tracking-[0.18em] text-slate-200 uppercase">
-                    eh-os terminal output
+                    pwsh output
                   </p>
                   <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
                     route: {routeState.path}
@@ -1062,10 +1072,10 @@ export function TerminalPortfolioApp({
               {[
                 {
                   id: "terminal-boot",
-                  command: "boot --terminal-first",
+                  command: "pwsh ./profile.ps1",
                   lines: [
-                    "Event Horizon terminal app mounted.",
-                    "All portfolio routes now render through this shell.",
+                    "PWSH Studio initialized.",
+                    "Profile, projects, writing, and contact are ready.",
                   ],
                   time: "boot",
                   variant: "system" as const,
@@ -1080,13 +1090,13 @@ export function TerminalPortfolioApp({
                 />
               ))}
 
-              {singularity ? <SingularityLab /> : null}
+              {workbenchOpen ? <PwshLabPanel /> : null}
               {matrixMode ? <MatrixTelemetry /> : null}
             </div>
 
             <form onSubmit={onSubmit} className="border-t border-white/10 p-4">
               <label className="sr-only" htmlFor="terminal-command">
-                Terminal command
+                PWSH command
               </label>
               {suggestions.length ? (
                 <div className="mb-2 flex flex-wrap gap-2">
@@ -1109,7 +1119,7 @@ export function TerminalPortfolioApp({
                 )}
               >
                 <span className={cn("font-mono", themeConfig.text)}>
-                  eh-os:~$
+                  PS C:\Prathamesh&gt;
                 </span>
                 <input
                   id="terminal-command"
@@ -1159,7 +1169,7 @@ function TerminalHeader({
   themeConfig,
 }: {
   activeLog?: ResearchLog
-  activeProject?: MissionProject
+  activeProject?: PortfolioProject
   clock: string
   inspectorOpen: boolean
   latency: number
@@ -1187,12 +1197,12 @@ function TerminalHeader({
           </span>
           <div className="min-w-0">
             <p className="truncate font-heading text-sm font-semibold tracking-[0.22em] text-slate-50 uppercase">
-              Event Horizon Terminal
+              PWSH Studio
             </p>
             <p className="mt-1 truncate font-mono text-[10px] tracking-[0.18em] text-slate-500 uppercase">
-              {activeProject?.missionName ??
+              {activeProject?.title ??
                 activeLog?.title ??
-                "portfolio shell"}{" "}
+                "developer workspace"}{" "}
               / {route.path}
             </p>
           </div>
@@ -1355,11 +1365,11 @@ function TerminalQuickAccess({
             <div className="flex items-center gap-2">
               <Network className={cn("size-4", themeConfig.text)} />
               <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-100 uppercase">
-                quick access
+                start menu
               </p>
             </div>
             <span className="font-mono text-[10px] text-slate-500">
-              {routeItems.length} mounts
+              {routeItems.length} pages
             </span>
             <Button
               type="button"
@@ -1657,7 +1667,7 @@ function RouteOutput({
         <ProjectList
           onNavigate={onNavigate}
           projects={projects}
-          title="All indexed missions"
+          title="Featured project index"
         />
       )
     case "project-detail":
@@ -1694,19 +1704,19 @@ function HomeOutput({
     <TerminalSection
       icon={Rocket}
       label="home"
-      title="Terminal-first portfolio app"
+      title="Prathamesh Chougale — PWSH Studio"
     >
       <TerminalLines
         lines={[
           ...initSequence,
           `${profile.name} / ${profile.role}`,
           profile.heroCopy,
-          "Quick access mounts each route into this output pane.",
+          "Use the start menu or commands to explore projects, writing, and contact.",
         ]}
       />
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <Metric label="projects" value={String(projects.length)} />
-        <Metric label="logs" value={String(researchLogs.length)} />
+        <Metric label="notes" value={String(researchLogs.length)} />
         <Metric label="skills" value={String(skills.length)} />
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -1792,15 +1802,15 @@ function ProjectList({
   title,
 }: {
   onNavigate: (path: string, command?: string) => void
-  projects: MissionProject[]
+  projects: PortfolioProject[]
   title: string
 }) {
   return (
     <TerminalSection icon={Archive} label="projects" title={title}>
       <TerminalLines
         lines={[
-          `${projectItems.length} missions available.`,
-          "Select a row to mount its case study at /projects/<slug>.",
+          `${projectItems.length} projects available.`,
+          "Select a row to open its case study at /projects/<slug>.",
         ]}
       />
       <div className="mt-5 grid gap-2">
@@ -1815,11 +1825,11 @@ function ProjectList({
             className="grid gap-3 border border-white/10 bg-white/[0.03] p-3 text-left transition hover:border-cyan-300/35 hover:bg-cyan-300/[0.055] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
             <span className="font-mono text-[11px] text-cyan-100">
-              {project.signal}
+              {project.projectId}
             </span>
             <span className="min-w-0">
               <span className="block font-heading text-base text-slate-50">
-                {project.missionName}
+                {project.title}
               </span>
               <span className="mt-1 block text-sm leading-6 text-slate-400">
                 {project.description}
@@ -1850,18 +1860,18 @@ function ProjectDetailOutput({
   project,
 }: {
   onNavigate: (path: string, command?: string) => void
-  project?: MissionProject | null
+  project?: PortfolioProject | null
 }) {
   if (!project) {
     return (
-      <TerminalSection icon={FolderGit2} label="project" title="Mission not found">
-        <TerminalLines lines={["Use projects to inspect available missions."]} />
+      <TerminalSection icon={FolderGit2} label="project" title="Project not found">
+        <TerminalLines lines={["Use projects to inspect available case studies."]} />
       </TerminalSection>
     )
   }
 
   return (
-    <TerminalSection icon={FolderGit2} label={project.signal} title={project.missionName}>
+    <TerminalSection icon={FolderGit2} label={project.projectId} title={project.title}>
       <TerminalLines
         lines={[
           `Type: ${project.type}`,
@@ -1872,7 +1882,7 @@ function ProjectDetailOutput({
       />
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Metric label="category" value={project.category} />
-        <Metric label="coordinates" value={project.coordinates} />
+        <Metric label="project id" value={project.projectId} />
         <Metric label="stack size" value={String(project.stack.length)} />
       </div>
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
@@ -1930,11 +1940,11 @@ function BlogOutput({
   onNavigate: (path: string, command?: string) => void
 }) {
   return (
-    <TerminalSection icon={BookOpen} label="blog" title="Research logs">
+    <TerminalSection icon={BookOpen} label="blog" title="Engineering notes">
       <TerminalLines
         lines={[
-          `${researchLogs.length} logs indexed.`,
-          "Select a log to mount it at /blog/<slug>.",
+          `${researchLogs.length} notes available.`,
+          "Select a note to open it at /blog/<slug>.",
         ]}
       />
       <div className="mt-5 grid gap-2">
@@ -1943,7 +1953,7 @@ function BlogOutput({
             key={log.slug}
             type="button"
             data-log-slug={log.slug}
-            onClick={() => onNavigate(`/blog/${log.slug}`, `log ${log.slug}`)}
+            onClick={() => onNavigate(`/blog/${log.slug}`, `note ${log.title}`)}
             className="grid gap-3 border border-white/10 bg-white/[0.03] p-3 text-left transition hover:border-cyan-300/35 hover:bg-cyan-300/[0.055] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
             <span className="font-mono text-[11px] text-cyan-100">
@@ -1978,8 +1988,8 @@ function BlogDetailOutput({
 }) {
   if (!log) {
     return (
-      <TerminalSection icon={BookOpen} label="log" title="Research log not found">
-        <TerminalLines lines={["Use blog to inspect available logs."]} />
+      <TerminalSection icon={BookOpen} label="note" title="Engineering note not found">
+        <TerminalLines lines={["Use blog to inspect available notes."]} />
       </TerminalSection>
     )
   }
@@ -2013,7 +2023,7 @@ function BlogDetailOutput({
         onClick={() => onNavigate("/blog", "blog")}
         className="mt-5 border border-cyan-300/30 bg-cyan-300/[0.08] px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-cyan-100 uppercase"
       >
-        back to logs
+        back to notes
       </button>
     </TerminalSection>
   )
@@ -2021,10 +2031,10 @@ function BlogDetailOutput({
 
 function ContactOutput() {
   return (
-    <TerminalSection icon={Send} label="contact" title="Deep Space Transmission">
+    <TerminalSection icon={Send} label="contact" title="Start a Conversation">
       <TerminalLines
         lines={[
-          "Route: Browser -> API -> Mail Service -> Developer Inbox.",
+          "Path: Browser -> API -> Mail Service -> Developer Inbox.",
           profile.alternativeHeroLine,
         ]}
       />
@@ -2200,16 +2210,16 @@ function MatrixTelemetry() {
   )
 }
 
-function SingularityLab() {
+function PwshLabPanel() {
   return (
     <div className="mt-5 border border-violet-300/30 bg-violet-400/10 p-4">
       <p className="font-mono text-xs tracking-[0.18em] text-violet-100 uppercase">
-        Singularity Lab
+        PWSH Labs
       </p>
       <p className="mt-3 leading-7 text-slate-300">
-        Experimental workbench for protocol visualizers, terminal-native
-        portfolio routing, blockchain indexer observability, and system
-        telemetry that makes state visible.
+        Experimental workspace for protocol visualizers, PowerShell-inspired
+        navigation, blockchain indexer observability, and system telemetry that
+        makes state visible.
       </p>
     </div>
   )
