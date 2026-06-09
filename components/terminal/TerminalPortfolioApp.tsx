@@ -952,7 +952,16 @@ export function TerminalPortfolioApp({
 
     const outputElement = output
 
-    function scrollEntryIntoView(entryId: string) {
+    const scrollBehavior: ScrollBehavior = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+      ? "auto"
+      : "smooth"
+
+    function scrollEntryIntoView(
+      entryId: string,
+      behavior: ScrollBehavior = "auto"
+    ) {
       const target = outputElement.querySelector<HTMLElement>(
         `[data-terminal-entry-id="${entryId}"]`
       )
@@ -965,15 +974,18 @@ export function TerminalPortfolioApp({
       const targetRect = target.getBoundingClientRect()
       const nextTop = outputElement.scrollTop + targetRect.top - outputRect.top
       const maxTop = outputElement.scrollHeight - outputElement.clientHeight
-      outputElement.scrollTop = Math.max(0, Math.min(nextTop, maxTop))
+      outputElement.scrollTo({
+        behavior,
+        top: Math.max(0, Math.min(nextTop, maxTop)),
+      })
       return true
     }
 
     const pendingEntryId = terminalSession.pendingScrollEntryId
     if (pendingEntryId) {
-      const didScroll = scrollEntryIntoView(pendingEntryId)
+      const didScroll = scrollEntryIntoView(pendingEntryId, scrollBehavior)
       const frame = window.requestAnimationFrame(() => {
-        scrollEntryIntoView(pendingEntryId)
+        scrollEntryIntoView(pendingEntryId, scrollBehavior)
         terminalSession.pendingScrollEntryId = undefined
       })
 
