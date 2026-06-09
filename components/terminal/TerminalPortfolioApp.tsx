@@ -29,6 +29,7 @@ import {
   Mail,
   Network,
   Rocket,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
@@ -40,6 +41,7 @@ import {
 import { Icons } from "@/components/icons"
 import { TerminalContactForm } from "@/components/terminal/TerminalContactForm"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   about,
   architectureLayers,
@@ -90,9 +92,11 @@ type RouteState = {
 type TerminalTheme = "cyan" | "amber" | "violet"
 
 const INITIAL_STAMP = "--:--:--"
+const INSPECTOR_STORAGE_KEY = "event-horizon-terminal-inspector-open"
 const PENDING_COMMAND_KEY = "event-horizon-terminal-pending-command"
 const SIDEBAR_STORAGE_KEY = "event-horizon-terminal-sidebar-open"
 const THEME_STORAGE_KEY = "event-horizon-terminal-theme"
+let rememberedInspectorOpen = true
 let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
 
@@ -241,6 +245,14 @@ function storeSidebarOpen(value: boolean) {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
   } catch {
     // Sidebar persistence is a preference; the terminal still works without it.
+  }
+}
+
+function storeInspectorOpen(value: boolean) {
+  try {
+    window.localStorage.setItem(INSPECTOR_STORAGE_KEY, String(value))
+  } catch {
+    // Inspector persistence is a preference; the terminal still works without it.
   }
 }
 
@@ -402,6 +414,9 @@ export function TerminalPortfolioApp({
   const [uptime, setUptime] = useState(0)
   const [history, setHistory] = useState<string[]>([])
   const [, setHistoryIndex] = useState<number | null>(null)
+  const [inspectorOpen, setInspectorOpen] = useState(
+    () => rememberedInspectorOpen
+  )
   const [sidebarOpen, setSidebarOpen] = useState(() => rememberedSidebarOpen)
   const [theme, setTheme] = useState<TerminalTheme>(() => rememberedTerminalTheme)
   const [matrixMode, setMatrixMode] = useState(false)
@@ -447,6 +462,65 @@ export function TerminalPortfolioApp({
     return () => window.clearTimeout(restoreSidebar)
   }, [])
 
+  useEffect(() => {
+    const restoreInspector = window.setTimeout(() => {
+      try {
+        const storedInspectorOpen = window.localStorage.getItem(
+          INSPECTOR_STORAGE_KEY
+        )
+        if (
+          storedInspectorOpen === "true" ||
+          storedInspectorOpen === "false"
+        ) {
+          const nextValue = storedInspectorOpen === "true"
+          rememberedInspectorOpen = nextValue
+          setInspectorOpen(nextValue)
+        }
+      } catch {
+        // Ignore blocked storage; the inspector falls back to open.
+      }
+    }, 0)
+
+    return () => window.clearTimeout(restoreInspector)
+  }, [])
+
+  useEffect(() => {
+    function onWindowKeyDown(event: globalThis.KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      const isEditable =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable
+
+      if (isEditable || !(event.ctrlKey || event.metaKey)) return
+
+      const key = event.key.toLowerCase()
+
+      if (key === "b") {
+        event.preventDefault()
+        setSidebarOpen((current) => {
+          const nextValue = !current
+          rememberedSidebarOpen = nextValue
+          storeSidebarOpen(nextValue)
+          return nextValue
+        })
+      }
+
+      if (key === "i") {
+        event.preventDefault()
+        setInspectorOpen((current) => {
+          const nextValue = !current
+          rememberedInspectorOpen = nextValue
+          storeInspectorOpen(nextValue)
+          return nextValue
+        })
+      }
+    }
+
+    window.addEventListener("keydown", onWindowKeyDown)
+    return () => window.removeEventListener("keydown", onWindowKeyDown)
+  }, [])
+
   function applyTheme(nextTheme: TerminalTheme) {
     rememberedTerminalTheme = nextTheme
     setTheme(nextTheme)
@@ -457,6 +531,12 @@ export function TerminalPortfolioApp({
     rememberedSidebarOpen = nextValue
     setSidebarOpen(nextValue)
     storeSidebarOpen(nextValue)
+  }
+
+  function applyInspectorOpen(nextValue: boolean) {
+    rememberedInspectorOpen = nextValue
+    setInspectorOpen(nextValue)
+    storeInspectorOpen(nextValue)
   }
 
   function navigateTo(path: string, command = `open ${path}`) {
@@ -947,9 +1027,18 @@ export function TerminalPortfolioApp({
         <div
           className={cn(
             "grid min-h-0 flex-1 gap-3 lg:h-full lg:overflow-hidden",
-            sidebarOpen
+            sidebarOpen && inspectorOpen
               ? "lg:grid-cols-[260px_minmax(0,1fr)_300px] xl:grid-cols-[280px_minmax(0,1fr)_320px]"
-              : "lg:grid-cols-[72px_minmax(0,1fr)_300px] xl:grid-cols-[72px_minmax(0,1fr)_320px]"
+              : null,
+            !sidebarOpen && inspectorOpen
+              ? "lg:grid-cols-[72px_minmax(0,1fr)_300px] xl:grid-cols-[72px_minmax(0,1fr)_320px]"
+              : null,
+            sidebarOpen && !inspectorOpen
+              ? "lg:grid-cols-[260px_minmax(0,1fr)_64px] xl:grid-cols-[280px_minmax(0,1fr)_64px]"
+              : null,
+            !sidebarOpen && !inspectorOpen
+              ? "lg:grid-cols-[72px_minmax(0,1fr)_64px]"
+              : null
           )}
         >
           <TerminalQuickAccess
@@ -1074,6 +1163,8 @@ export function TerminalPortfolioApp({
             clock={clock}
             history={history}
             latency={latency}
+            open={inspectorOpen}
+            onOpenChange={applyInspectorOpen}
             route={routeState}
             setTheme={applyTheme}
             theme={theme}
@@ -1186,8 +1277,19 @@ function TerminalQuickAccess({
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
   const [commandTab, setCommandTab] = useState<"core" | "all">("core")
-  const visibleCommands =
-    commandTab === "core" ? coreCommands : allCommandShortcuts
+  const [commandQuery, setCommandQuery] = useState("")
+  const visibleCommands = useMemo(() => {
+    const source = commandTab === "core" ? coreCommands : allCommandShortcuts
+    const normalizedQuery = commandQuery.trim().toLowerCase()
+
+    if (!normalizedQuery || commandTab === "core") {
+      return source
+    }
+
+    return source.filter((command) =>
+      command.toLowerCase().includes(normalizedQuery)
+    )
+  }, [commandQuery, commandTab])
 
   if (!open) {
     return (
@@ -1336,49 +1438,69 @@ function TerminalQuickAccess({
 
         <div className="rounded-md border border-white/10 bg-black/20 p-3">
           <div className="flex items-center justify-between gap-2">
-          <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-            commands
-          </p>
-          <div
-            aria-label="Command shortcut groups"
-            className="grid grid-cols-2 border border-white/10 bg-black/25 p-0.5"
-            role="tablist"
-          >
-            {(["core", "all"] as const).map((tab) => (
-              <Button
-                key={tab}
-                type="button"
-                variant="ghost"
-                size="xs"
-                aria-selected={commandTab === tab}
-                onClick={() => setCommandTab(tab)}
-                role="tab"
-                className={cn(
-                  "h-6 rounded-none px-2 py-1 font-mono text-[9px] tracking-[0.14em] uppercase transition",
-                  commandTab === tab
-                    ? cn(themeConfig.soft, themeConfig.border)
-                    : "text-slate-500 hover:text-slate-200"
-                )}
-              >
-                {tab === "core" ? "Core" : "All"}
-              </Button>
-            ))}
-          </div>
-        </div>
-        <div className="mt-3 grid gap-2">
-          {visibleCommands.map((command) => (
-            <Button
-              key={command}
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onCommand(command)}
-              className="h-auto justify-start rounded-md border border-white/10 bg-white/[0.035] px-2 py-2 text-left font-mono text-[11px] text-slate-300 transition hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100"
+            <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+              commands
+            </p>
+            <div
+              aria-label="Command shortcut groups"
+              className="grid grid-cols-2 border border-white/10 bg-black/25 p-0.5"
+              role="tablist"
             >
-              {command}
-            </Button>
-          ))}
-        </div>
+              {(["core", "all"] as const).map((tab) => (
+                <Button
+                  key={tab}
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  aria-selected={commandTab === tab}
+                  onClick={() => setCommandTab(tab)}
+                  role="tab"
+                  className={cn(
+                    "h-6 rounded-none px-2 py-1 font-mono text-[9px] tracking-[0.14em] uppercase transition",
+                    commandTab === tab
+                      ? cn(themeConfig.soft, themeConfig.border)
+                      : "text-slate-500 hover:text-slate-200"
+                  )}
+                >
+                  {tab === "core" ? "Core" : "All"}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {commandTab === "all" ? (
+            <label className="mt-3 flex items-center gap-2 border border-white/10 bg-black/25 px-2">
+              <Search className={cn("size-3.5 shrink-0", themeConfig.text)} />
+              <Input
+                value={commandQuery}
+                onChange={(event) => setCommandQuery(event.target.value)}
+                placeholder="filter commands"
+                className="h-8 rounded-none border-0 bg-transparent px-0 font-mono text-[11px] text-slate-200 shadow-none ring-0 placeholder:text-slate-600 focus-visible:border-0 focus-visible:ring-0"
+                data-command-filter
+              />
+            </label>
+          ) : null}
+
+          <div className="mt-3 grid gap-2">
+            {visibleCommands.length ? (
+              visibleCommands.map((command) => (
+                <Button
+                  key={command}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onCommand(command)}
+                  className="h-auto justify-start whitespace-normal rounded-md border border-white/10 bg-white/[0.035] px-2 py-2 text-left font-mono text-[11px] text-slate-300 transition hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100"
+                >
+                  {command}
+                </Button>
+              ))
+            ) : (
+              <p className="border border-white/10 bg-white/[0.025] px-2 py-2 font-mono text-[11px] text-slate-500">
+                No matching commands.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </aside>
@@ -1389,6 +1511,8 @@ function TerminalInspector({
   clock,
   history,
   latency,
+  onOpenChange,
+  open,
   route,
   setTheme,
   theme,
@@ -1399,6 +1523,8 @@ function TerminalInspector({
   clock: string
   history: string[]
   latency: number
+  onOpenChange: (open: boolean) => void
+  open: boolean
   route: RouteState
   setTheme: (theme: TerminalTheme) => void
   theme: TerminalTheme
@@ -1406,13 +1532,67 @@ function TerminalInspector({
   unlockedEggs: string[]
   uptime: number
 }) {
+  if (!open) {
+    return (
+      <aside
+        className="hud-panel min-h-0 rounded-lg p-2 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+        data-inspector-open="false"
+      >
+        <div className="flex min-h-0 flex-col items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Open inspector"
+            title="Open inspector"
+            onClick={() => onOpenChange(true)}
+            className={cn(
+              "rounded-md border bg-white/[0.035]",
+              themeConfig.border,
+              themeConfig.soft
+            )}
+          >
+            <ChevronLeft data-icon="inline-start" />
+          </Button>
+
+          <div className="h-px w-full bg-white/10" />
+
+          {[ShieldCheck, Clock, Cpu, Sparkles].map((Icon, index) => (
+            <div
+              key={index}
+              className="flex size-8 items-center justify-center rounded-md border border-white/10 bg-white/[0.035] text-slate-300"
+            >
+              <Icon className={cn("size-4", themeConfig.text)} />
+            </div>
+          ))}
+        </div>
+      </aside>
+    )
+  }
+
   return (
-    <aside className="hud-panel min-h-0 rounded-lg p-3 lg:h-full lg:overflow-y-auto">
-      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-        <Activity className={cn("size-4", themeConfig.text)} />
-        <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-100 uppercase">
-          inspector
-        </p>
+    <aside
+      className="hud-panel min-h-0 rounded-lg p-3 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      data-inspector-open="true"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="flex items-center gap-2">
+          <Activity className={cn("size-4", themeConfig.text)} />
+          <p className="font-mono text-[10px] tracking-[0.18em] text-cyan-100 uppercase">
+            inspector
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Close inspector"
+          title="Close inspector"
+          onClick={() => onOpenChange(false)}
+          className="rounded-md border border-white/10 bg-white/[0.035] text-slate-400 hover:border-cyan-300/35 hover:text-cyan-100"
+        >
+          <ChevronRight data-icon="inline-start" />
+        </Button>
       </div>
 
       <div className="mt-3 grid gap-2">
