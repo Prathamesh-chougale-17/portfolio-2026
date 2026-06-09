@@ -1947,11 +1947,11 @@ function TerminalQuickAccess({
         </CardContent>
 
         <Separator className="bg-[var(--shell-line)]" />
-        <CardContent className="px-3 py-3">
+        <CardContent className="min-h-0 shrink-0 px-3 py-3">
           <Tabs
             value={commandTab}
             onValueChange={(value) => setCommandTab(value as "core" | "all")}
-            className="gap-3"
+            className="flex min-h-0 flex-col gap-3"
           >
             <div className="flex items-center justify-between gap-2">
               <p className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
@@ -1986,7 +1986,11 @@ function TerminalQuickAccess({
               </label>
             ) : null}
 
-            <ScrollArea className="max-h-[min(38svh,390px)] pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
+            <div
+              className="max-h-[min(38svh,390px)] min-h-0 overflow-y-auto overscroll-contain pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              data-command-scroll
+              onWheel={(event) => event.stopPropagation()}
+            >
               <div className="grid gap-2">
                 {visibleCommands.length ? (
                   visibleCommands.map((command) => (
@@ -2007,7 +2011,7 @@ function TerminalQuickAccess({
                   </p>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </Tabs>
         </CardContent>
       </Card>
