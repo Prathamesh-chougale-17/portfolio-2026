@@ -17,6 +17,8 @@ import {
   Archive,
   BookOpen,
   Braces,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Code2,
   Command,
@@ -89,7 +91,9 @@ type TerminalTheme = "cyan" | "amber" | "violet"
 
 const INITIAL_STAMP = "--:--:--"
 const PENDING_COMMAND_KEY = "event-horizon-terminal-pending-command"
+const SIDEBAR_STORAGE_KEY = "event-horizon-terminal-sidebar-open"
 const THEME_STORAGE_KEY = "event-horizon-terminal-theme"
+let rememberedSidebarOpen = true
 let rememberedTerminalTheme: TerminalTheme = "cyan"
 
 const routeItems = [
@@ -229,6 +233,14 @@ function storeTerminalTheme(value: TerminalTheme) {
     window.localStorage.setItem(THEME_STORAGE_KEY, value)
   } catch {
     // Theme persistence is a preference; the terminal still works without it.
+  }
+}
+
+function storeSidebarOpen(value: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
+  } catch {
+    // Sidebar persistence is a preference; the terminal still works without it.
   }
 }
 
@@ -390,6 +402,7 @@ export function TerminalPortfolioApp({
   const [uptime, setUptime] = useState(0)
   const [history, setHistory] = useState<string[]>([])
   const [, setHistoryIndex] = useState<number | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(() => rememberedSidebarOpen)
   const [theme, setTheme] = useState<TerminalTheme>(() => rememberedTerminalTheme)
   const [matrixMode, setMatrixMode] = useState(false)
   const [singularity, setSingularity] = useState(false)
@@ -417,10 +430,33 @@ export function TerminalPortfolioApp({
     return () => window.clearTimeout(restoreTheme)
   }, [])
 
+  useEffect(() => {
+    const restoreSidebar = window.setTimeout(() => {
+      try {
+        const storedSidebarOpen = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
+        if (storedSidebarOpen === "true" || storedSidebarOpen === "false") {
+          const nextValue = storedSidebarOpen === "true"
+          rememberedSidebarOpen = nextValue
+          setSidebarOpen(nextValue)
+        }
+      } catch {
+        // Ignore blocked storage; the sidebar falls back to open.
+      }
+    }, 0)
+
+    return () => window.clearTimeout(restoreSidebar)
+  }, [])
+
   function applyTheme(nextTheme: TerminalTheme) {
     rememberedTerminalTheme = nextTheme
     setTheme(nextTheme)
     storeTerminalTheme(nextTheme)
+  }
+
+  function applySidebarOpen(nextValue: boolean) {
+    rememberedSidebarOpen = nextValue
+    setSidebarOpen(nextValue)
+    storeSidebarOpen(nextValue)
   }
 
   function navigateTo(path: string, command = `open ${path}`) {
@@ -908,10 +944,19 @@ export function TerminalPortfolioApp({
           themeConfig={themeConfig}
         />
 
-        <div className="grid min-h-0 flex-1 gap-3 lg:h-full lg:grid-cols-[260px_minmax(0,1fr)_300px] lg:overflow-hidden xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+        <div
+          className={cn(
+            "grid min-h-0 flex-1 gap-3 lg:h-full lg:overflow-hidden",
+            sidebarOpen
+              ? "lg:grid-cols-[260px_minmax(0,1fr)_300px] xl:grid-cols-[280px_minmax(0,1fr)_320px]"
+              : "lg:grid-cols-[72px_minmax(0,1fr)_300px] xl:grid-cols-[72px_minmax(0,1fr)_320px]"
+          )}
+        >
           <TerminalQuickAccess
             activePath={routeState.path}
+            open={sidebarOpen}
             onCommand={runCommand}
+            onOpenChange={applySidebarOpen}
             onNavigate={navigateTo}
             themeConfig={themeConfig}
           />
@@ -1127,12 +1172,16 @@ function TerminalHeader({
 
 function TerminalQuickAccess({
   activePath,
+  open,
   onCommand,
+  onOpenChange,
   onNavigate,
   themeConfig,
 }: {
   activePath: string
+  open: boolean
   onCommand: (command: string) => void
+  onOpenChange: (open: boolean) => void
   onNavigate: (path: string, command?: string) => void
   themeConfig: (typeof terminalThemes)[TerminalTheme]
 }) {
@@ -1140,8 +1189,75 @@ function TerminalQuickAccess({
   const visibleCommands =
     commandTab === "core" ? coreCommands : allCommandShortcuts
 
+  if (!open) {
+    return (
+      <aside
+        className="hud-panel min-h-0 rounded-lg p-2 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+        data-sidebar-open="false"
+      >
+        <div className="flex min-h-0 flex-col items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Open sidebar"
+            title="Open sidebar"
+            onClick={() => onOpenChange(true)}
+            className={cn(
+              "rounded-md border bg-white/[0.035]",
+              themeConfig.border,
+              themeConfig.soft
+            )}
+          >
+            <ChevronRight data-icon="inline-start" />
+          </Button>
+
+          <div className="h-px w-full bg-white/10" />
+
+          {routeItems.map((item) => {
+            const Icon = item.icon
+            const active =
+              item.href === "/"
+                ? activePath === "/"
+                : activePath === item.href ||
+                  activePath.startsWith(`${item.href}/`)
+            return (
+              <Button
+                key={item.href}
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-current={active ? "page" : undefined}
+                aria-label={item.label}
+                data-terminal-route={item.href}
+                title={`${item.label} - ${item.meta}`}
+                onClick={() => onNavigate(item.href, item.command)}
+                className={cn(
+                  "relative rounded-md border bg-white/[0.035] text-slate-300 hover:border-cyan-300/35 hover:bg-white/[0.055] hover:text-cyan-100",
+                  active && cn(themeConfig.border, themeConfig.soft)
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1.5 bottom-1.5 left-0 w-0.5 opacity-0 transition",
+                    active && "opacity-100",
+                    themeConfig.marker
+                  )}
+                />
+                <Icon data-icon="inline-start" />
+              </Button>
+            )
+          })}
+        </div>
+      </aside>
+    )
+  }
+
   return (
-    <aside className="hud-panel min-h-0 rounded-lg p-3 lg:h-full lg:overflow-y-auto">
+    <aside
+      className="hud-panel min-h-0 rounded-lg p-3 [scrollbar-width:none] lg:h-full lg:overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      data-sidebar-open="true"
+    >
       <div className="flex min-h-0 flex-col gap-3">
         <div className="rounded-md border border-white/10 bg-white/[0.025] p-3">
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
@@ -1154,6 +1270,17 @@ function TerminalQuickAccess({
             <span className="font-mono text-[10px] text-slate-500">
               {routeItems.length} mounts
             </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Close sidebar"
+              title="Close sidebar"
+              onClick={() => onOpenChange(false)}
+              className="rounded-md border border-white/10 bg-white/[0.035] text-slate-400 hover:border-cyan-300/35 hover:text-cyan-100"
+            >
+              <ChevronLeft data-icon="inline-start" />
+            </Button>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-1">
