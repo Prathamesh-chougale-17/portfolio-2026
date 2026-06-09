@@ -35,15 +35,15 @@ function ThemeHotkey() {
         return
       }
 
+      if (isTypingTarget(event.target)) {
+        return
+      }
+
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
-        return
-      }
-
-      if (isTypingTarget(event.target)) {
+      if (typeof event.key !== "string" || event.key.toLowerCase() !== "d") {
         return
       }
 
