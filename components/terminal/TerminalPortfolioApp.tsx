@@ -235,12 +235,13 @@ const allCommandShortcuts = commandList.map((command) =>
         ? "grep backend"
         : command === "find "
           ? "find projects -name backend"
-      : command
+          : command
 )
 
 const terminalThemes: Record<TerminalTheme, ShellThemeConfig> = {
   cyan: {
-    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    accent:
+      "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
     border: "border-[color:var(--shell-border-strong)]",
     glow: "shadow-[var(--shell-glow)]",
     label: "Cyan",
@@ -260,11 +261,13 @@ const terminalThemes: Record<TerminalTheme, ShellThemeConfig> = {
       "--shell-accent": "rgb(34 211 238)",
       "--shell-accent-text": "rgb(165 243 252)",
       "--shell-accent-soft": "rgb(34 211 238 / 0.13)",
-      "--shell-glow": "0 0 0 1px rgb(34 211 238 / 0.16), 0 24px 80px rgb(34 211 238 / 0.10)",
+      "--shell-glow":
+        "0 0 0 1px rgb(34 211 238 / 0.16), 0 24px 80px rgb(34 211 238 / 0.10)",
     },
   },
   amber: {
-    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    accent:
+      "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
     border: "border-[color:var(--shell-border-strong)]",
     glow: "shadow-[var(--shell-glow)]",
     label: "Amber",
@@ -284,11 +287,13 @@ const terminalThemes: Record<TerminalTheme, ShellThemeConfig> = {
       "--shell-accent": "rgb(250 204 21)",
       "--shell-accent-text": "rgb(254 240 138)",
       "--shell-accent-soft": "rgb(250 204 21 / 0.14)",
-      "--shell-glow": "0 0 0 1px rgb(250 204 21 / 0.16), 0 24px 80px rgb(250 204 21 / 0.10)",
+      "--shell-glow":
+        "0 0 0 1px rgb(250 204 21 / 0.16), 0 24px 80px rgb(250 204 21 / 0.10)",
     },
   },
   violet: {
-    accent: "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
+    accent:
+      "border-[color:var(--shell-accent)] bg-[var(--shell-accent)] text-black",
     border: "border-[color:var(--shell-border-strong)]",
     glow: "shadow-[var(--shell-glow)]",
     label: "Violet",
@@ -308,7 +313,8 @@ const terminalThemes: Record<TerminalTheme, ShellThemeConfig> = {
       "--shell-accent": "rgb(196 181 253)",
       "--shell-accent-text": "rgb(221 214 254)",
       "--shell-accent-soft": "rgb(196 181 253 / 0.15)",
-      "--shell-glow": "0 0 0 1px rgb(196 181 253 / 0.18), 0 24px 80px rgb(167 139 250 / 0.12)",
+      "--shell-glow":
+        "0 0 0 1px rgb(196 181 253 / 0.18), 0 24px 80px rgb(167 139 250 / 0.12)",
     },
   },
 }
@@ -687,7 +693,9 @@ export function TerminalPortfolioApp({
     () => rememberedInspectorOpen
   )
   const [sidebarOpen, setSidebarOpen] = useState(() => rememberedSidebarOpen)
-  const [theme, setTheme] = useState<TerminalTheme>(() => rememberedTerminalTheme)
+  const [theme, setTheme] = useState<TerminalTheme>(
+    () => rememberedTerminalTheme
+  )
   const [matrixMode, setMatrixMode] = useState(false)
   const [workbenchOpen, setWorkbenchOpen] = useState(false)
   const [unlockedEggs, setUnlockedEggs] = useState<string[]>([])
@@ -717,7 +725,8 @@ export function TerminalPortfolioApp({
   useEffect(() => {
     const restoreSidebar = window.setTimeout(() => {
       try {
-        const storedSidebarOpen = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
+        const storedSidebarOpen =
+          window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
         if (storedSidebarOpen === "true" || storedSidebarOpen === "false") {
           const nextValue = storedSidebarOpen === "true"
           rememberedSidebarOpen = nextValue
@@ -789,7 +798,7 @@ export function TerminalPortfolioApp({
     if (!isValidRoute(target)) {
       appendEntry({
         command,
-      lines: [`Route ${target} is not in the workspace map.`],
+        lines: [`Route ${target} is not in the workspace map.`],
         variant: "error",
       })
       return
@@ -976,7 +985,10 @@ export function TerminalPortfolioApp({
       return
     }
 
-    if (normalized.startsWith("theme ") || normalized.startsWith("set-theme ")) {
+    if (
+      normalized.startsWith("theme ") ||
+      normalized.startsWith("set-theme ")
+    ) {
       const nextTheme = normalized.replace(/^(theme|set-theme)\s+/i, "").trim()
       if (!["cyan", "amber", "violet"].includes(nextTheme)) {
         appendEntry({
@@ -1370,7 +1382,7 @@ export function TerminalPortfolioApp({
               ? [`${name}: shell built-in`]
               : knownCommands.has(name.toLowerCase())
                 ? [`/usr/bin/${name}`]
-              : [`${name} not found`],
+                : [`${name} not found`],
             variant:
               isBuiltin || knownCommands.has(name.toLowerCase())
                 ? "success"
@@ -1556,7 +1568,7 @@ export function TerminalPortfolioApp({
             <CardContent
               ref={outputRef}
               className={cn(
-                "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--shell-bg)] px-4 py-4 [scrollbar-color:var(--shell-border-strong)_transparent] sm:px-5",
+                "min-h-0 flex-1 [scrollbar-color:var(--shell-border-strong)_transparent] overflow-y-auto overscroll-contain bg-[var(--shell-bg)] px-4 py-4 sm:px-5",
                 matrixMode &&
                   "bg-[linear-gradient(180deg,var(--shell-accent-soft),transparent_34%),repeating-linear-gradient(90deg,transparent_0_28px,var(--shell-accent-soft)_28px_29px)]"
               )}
@@ -1567,7 +1579,7 @@ export function TerminalPortfolioApp({
                   id: "terminal-boot",
                   command: "source ~/.profile",
                   lines: [
-                    "Linux-style workspace shell initialized.",
+                    "Workspace shell initialized.",
                     "Profile, projects, writing, and contact are ready.",
                   ],
                   time: "boot",
@@ -1589,46 +1601,47 @@ export function TerminalPortfolioApp({
 
             <CardFooter className="border-t border-[color:var(--shell-line)] bg-[var(--shell-bg-elevated)] px-4 py-4">
               <form onSubmit={onSubmit} className="w-full">
-              <label className="sr-only" htmlFor="terminal-command">
-                Shell command
-              </label>
-              {suggestions.length ? (
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => setInput(suggestion)}
-                      className="border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-400 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                <label className="sr-only" htmlFor="terminal-command">
+                  Shell command
+                </label>
+                {suggestions.length ? (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => setInput(suggestion)}
+                        className="border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-slate-400 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 border bg-[var(--shell-bg)] px-3 py-2 shadow-inner",
+                    themeConfig.border
+                  )}
+                >
+                  <span className={cn("font-mono", themeConfig.text)}>
+                    prath@pwsh:{routeState.path === "/" ? "~" : routeState.path}
+                    $
+                  </span>
+                  <input
+                    id="terminal-command"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={onKeyDown}
+                    placeholder="help"
+                    className="min-w-0 flex-1 bg-transparent font-mono text-sm text-slate-100 outline-none placeholder:text-slate-600"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <span className="hidden font-mono text-[10px] tracking-[0.16em] text-slate-600 uppercase sm:inline">
+                    tab completes
+                  </span>
                 </div>
-              ) : null}
-              <div
-                className={cn(
-                  "flex items-center gap-3 border bg-[var(--shell-bg)] px-3 py-2 shadow-inner",
-                  themeConfig.border
-                )}
-              >
-                <span className={cn("font-mono", themeConfig.text)}>
-                  prath@pwsh:{routeState.path === "/" ? "~" : routeState.path}$
-                </span>
-                <input
-                  id="terminal-command"
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  onKeyDown={onKeyDown}
-                  placeholder="help"
-                  className="min-w-0 flex-1 bg-transparent font-mono text-sm text-slate-100 outline-none placeholder:text-slate-600"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                <span className="hidden font-mono text-[10px] tracking-[0.16em] text-slate-600 uppercase sm:inline">
-                  tab completes
-                </span>
-              </div>
               </form>
             </CardFooter>
           </Card>
@@ -1682,68 +1695,70 @@ function TerminalHeader({
       <Card className="gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10 backdrop-blur-xl">
         <CardContent className="px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center border",
-              themeConfig.border,
-              themeConfig.soft
-            )}
-          >
-            <Command className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate font-heading text-sm font-semibold tracking-[0.22em] text-slate-50 uppercase">
-              PWSH Studio
-            </p>
-            <p className="mt-1 truncate font-mono text-[10px] tracking-[0.18em] text-slate-500 uppercase">
-              {activeProject?.title ??
-                activeLog?.title ??
-                "developer workspace"}{" "}
-              / {route.path}
-            </p>
-          </div>
-        </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <span
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center border",
+                  themeConfig.border,
+                  themeConfig.soft
+                )}
+              >
+                <Command className="size-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-heading text-sm font-semibold tracking-[0.22em] text-slate-50 uppercase">
+                  PWSH Studio
+                </p>
+                <p className="mt-1 truncate font-mono text-[10px] tracking-[0.18em] text-slate-500 uppercase">
+                  {activeProject?.title ??
+                    activeLog?.title ??
+                    "developer workspace"}{" "}
+                  / {route.path}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Telemetry label="Clock" value={clock} />
-          <Telemetry label="Ping" value={`${latency}ms`} />
-          <a
-            href={github?.url ?? "#"}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
-            className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
-          >
-            <GitHubIcon className="size-4" />
-          </a>
-          <a
-            href={linkedin?.url ?? "#"}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="LinkedIn"
-            className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
-          >
-            <LinkedInIcon className="size-4" />
-          </a>
-          <Button
-            type="button"
-            size="lg"
-            aria-pressed={inspectorOpen}
-            aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
-            onClick={() => onInspectorOpenChange(!inspectorOpen)}
-            className={cn(
-              "h-9 rounded-none border px-3 text-sm font-semibold transition",
-              inspectorOpen
-                ? cn(themeConfig.border, themeConfig.soft)
-                : themeConfig.accent
-            )}
-          >
-            <Activity className="size-4" />
-            Inspect
-          </Button>
-        </div>
-      </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Telemetry label="Clock" value={clock} />
+              <Telemetry label="Ping" value={`${latency}ms`} />
+              <a
+                href={github?.url ?? "#"}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub"
+                className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
+              >
+                <GitHubIcon className="size-4" />
+              </a>
+              <a
+                href={linkedin?.url ?? "#"}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="LinkedIn"
+                className="flex size-9 items-center justify-center border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-200 transition hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
+              >
+                <LinkedInIcon className="size-4" />
+              </a>
+              <Button
+                type="button"
+                size="lg"
+                aria-pressed={inspectorOpen}
+                aria-label={
+                  inspectorOpen ? "Close inspector" : "Open inspector"
+                }
+                onClick={() => onInspectorOpenChange(!inspectorOpen)}
+                className={cn(
+                  "h-9 rounded-none border px-3 text-sm font-semibold transition",
+                  inspectorOpen
+                    ? cn(themeConfig.border, themeConfig.soft)
+                    : themeConfig.accent
+                )}
+              >
+                <Activity className="size-4" />
+                Inspect
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </header>
@@ -1782,64 +1797,61 @@ function TerminalQuickAccess({
 
   if (!open) {
     return (
-      <aside
-        className="min-h-0 rounded-lg lg:h-full"
-        data-sidebar-open="false"
-      >
+      <aside className="min-h-0 rounded-lg lg:h-full" data-sidebar-open="false">
         <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
           <CardContent className="flex min-h-0 flex-col items-center gap-2 px-2 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Open sidebar"
-            title="Open sidebar"
-            onClick={() => onOpenChange(true)}
-            className={cn(
-              "rounded-md border bg-[var(--shell-panel-soft)]",
-              themeConfig.border,
-              themeConfig.soft
-            )}
-          >
-            <ChevronRight data-icon="inline-start" />
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Open sidebar"
+              title="Open sidebar"
+              onClick={() => onOpenChange(true)}
+              className={cn(
+                "rounded-md border bg-[var(--shell-panel-soft)]",
+                themeConfig.border,
+                themeConfig.soft
+              )}
+            >
+              <ChevronRight data-icon="inline-start" />
+            </Button>
 
-          <Separator className="bg-[var(--shell-line)]" />
+            <Separator className="bg-[var(--shell-line)]" />
 
-          {routeItems.map((item) => {
-            const Icon = item.icon
-            const active =
-              item.href === "/"
-                ? activePath === "/"
-                : activePath === item.href ||
-                  activePath.startsWith(`${item.href}/`)
-            return (
-              <Button
-                key={item.href}
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-current={active ? "page" : undefined}
-                aria-label={item.label}
-                data-terminal-route={item.href}
-                title={`${item.label} - ${item.meta}`}
-                onClick={() => onNavigate(item.href, item.command)}
-                className={cn(
-                  "relative rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
-                  active && cn(themeConfig.border, themeConfig.soft)
-                )}
-              >
-                <span
+            {routeItems.map((item) => {
+              const Icon = item.icon
+              const active =
+                item.href === "/"
+                  ? activePath === "/"
+                  : activePath === item.href ||
+                    activePath.startsWith(`${item.href}/`)
+              return (
+                <Button
+                  key={item.href}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-current={active ? "page" : undefined}
+                  aria-label={item.label}
+                  data-terminal-route={item.href}
+                  title={`${item.label} - ${item.meta}`}
+                  onClick={() => onNavigate(item.href, item.command)}
                   className={cn(
-                    "absolute top-1.5 bottom-1.5 left-0 w-0.5 opacity-0 transition",
-                    active && "opacity-100",
-                    themeConfig.marker
+                    "relative rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
+                    active && cn(themeConfig.border, themeConfig.soft)
                   )}
-                />
-                <Icon data-icon="inline-start" />
-              </Button>
-            )
-          })}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-1.5 bottom-1.5 left-0 w-0.5 opacity-0 transition",
+                      active && "opacity-100",
+                      themeConfig.marker
+                    )}
+                  />
+                  <Icon data-icon="inline-start" />
+                </Button>
+              )
+            })}
           </CardContent>
         </Card>
       </aside>
@@ -1847,10 +1859,7 @@ function TerminalQuickAccess({
   }
 
   return (
-    <aside
-      className="min-h-0 rounded-lg lg:h-full"
-      data-sidebar-open="true"
-    >
+    <aside className="min-h-0 rounded-lg lg:h-full" data-sidebar-open="true">
       <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
         <CardHeader className="px-3 py-3">
           <div className="flex items-center justify-between gap-3">
@@ -1860,7 +1869,10 @@ function TerminalQuickAccess({
                 start menu
               </CardTitle>
             </div>
-            <Badge variant="outline" className="rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-400">
+            <Badge
+              variant="outline"
+              className="rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-400"
+            >
               {routeItems.length} pages
             </Badge>
             <Button
@@ -1879,56 +1891,59 @@ function TerminalQuickAccess({
         <Separator className="bg-[var(--shell-line)]" />
         <CardContent className="min-h-0 flex-1 px-3 py-3">
           <ScrollArea className="h-full pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-            {routeItems.map((item) => {
-              const Icon = item.icon
-              const active =
-                item.href === "/"
-                  ? activePath === "/"
-                  : activePath === item.href ||
-                    activePath.startsWith(`${item.href}/`)
-              return (
-                <Button
-                  key={item.href}
-                  type="button"
-                  variant="ghost"
-                  size="lg"
-                  aria-current={active ? "page" : undefined}
-                  data-terminal-route={item.href}
-                  onClick={() => onNavigate(item.href, item.command)}
-                  className={cn(
-                    "group relative h-auto min-h-12 w-full justify-between overflow-hidden rounded-md border px-3 py-2 text-left transition",
-                    active
-                      ? cn(themeConfig.border, themeConfig.soft)
-                      : "border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
-                  )}
-                >
-                  <span
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+              {routeItems.map((item) => {
+                const Icon = item.icon
+                const active =
+                  item.href === "/"
+                    ? activePath === "/"
+                    : activePath === item.href ||
+                      activePath.startsWith(`${item.href}/`)
+                return (
+                  <Button
+                    key={item.href}
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    aria-current={active ? "page" : undefined}
+                    data-terminal-route={item.href}
+                    onClick={() => onNavigate(item.href, item.command)}
                     className={cn(
-                      "absolute top-2 bottom-2 left-0 w-0.5 opacity-0 transition",
-                      active && "opacity-100",
-                      themeConfig.marker
+                      "group relative h-auto min-h-12 w-full justify-between overflow-hidden rounded-md border px-3 py-2 text-left transition",
+                      active
+                        ? cn(themeConfig.border, themeConfig.soft)
+                        : "border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] text-slate-300 hover:border-[color:var(--shell-border-strong)] hover:text-[var(--shell-accent-text)]"
                     )}
-                  />
-                  <span className="flex min-w-0 items-center gap-2">
-                    <Icon data-icon="inline-start" />
-                    <span className="min-w-0">
-                      <span className="block font-mono text-[11px] tracking-[0.14em] uppercase">
-                        {item.label}
-                      </span>
-                      <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-500">
-                        {item.meta}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-2 bottom-2 left-0 w-0.5 opacity-0 transition",
+                        active && "opacity-100",
+                        themeConfig.marker
+                      )}
+                    />
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Icon data-icon="inline-start" />
+                      <span className="min-w-0">
+                        <span className="block font-mono text-[11px] tracking-[0.14em] uppercase">
+                          {item.label}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-500">
+                          {item.meta}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                  <Badge variant="outline" className="hidden shrink-0 rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-500 xl:inline-flex">
-                    {item.href}
-                  </Badge>
-                </Button>
-              )
-            })}
-          </div>
-        </ScrollArea>
+                    <Badge
+                      variant="outline"
+                      className="hidden shrink-0 rounded-none border-[color:var(--shell-border)] font-mono text-[10px] text-slate-500 xl:inline-flex"
+                    >
+                      {item.href}
+                    </Badge>
+                  </Button>
+                )
+              })}
+            </div>
+          </ScrollArea>
         </CardContent>
 
         <Separator className="bg-[var(--shell-line)]" />
@@ -1943,50 +1958,56 @@ function TerminalQuickAccess({
                 commands
               </p>
               <TabsList className="rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
-                <TabsTrigger value="core" className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase">
+                <TabsTrigger
+                  value="core"
+                  className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase"
+                >
                   Core
                 </TabsTrigger>
-                <TabsTrigger value="all" className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase">
+                <TabsTrigger
+                  value="all"
+                  className="rounded-none px-2 font-mono text-[9px] tracking-[0.14em] uppercase"
+                >
                   All
                 </TabsTrigger>
               </TabsList>
             </div>
 
-          {commandTab === "all" ? (
-            <label className="flex items-center gap-2 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2">
-              <Search className={cn("size-3.5 shrink-0", themeConfig.text)} />
-              <Input
-                value={commandQuery}
-                onChange={(event) => setCommandQuery(event.target.value)}
-                placeholder="filter commands"
-                className="h-8 rounded-none border-0 bg-transparent px-0 font-mono text-[11px] text-slate-200 shadow-none ring-0 placeholder:text-slate-600 focus-visible:border-0 focus-visible:ring-0"
-                data-command-filter
-              />
-            </label>
-          ) : null}
+            {commandTab === "all" ? (
+              <label className="flex items-center gap-2 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2">
+                <Search className={cn("size-3.5 shrink-0", themeConfig.text)} />
+                <Input
+                  value={commandQuery}
+                  onChange={(event) => setCommandQuery(event.target.value)}
+                  placeholder="filter commands"
+                  className="h-8 rounded-none border-0 bg-transparent px-0 font-mono text-[11px] text-slate-200 shadow-none ring-0 placeholder:text-slate-600 focus-visible:border-0 focus-visible:ring-0"
+                  data-command-filter
+                />
+              </label>
+            ) : null}
 
-          <ScrollArea className="max-h-[min(38svh,390px)] pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
-          <div className="grid gap-2">
-            {visibleCommands.length ? (
-              visibleCommands.map((command) => (
-                <Button
-                  key={command}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onCommand(command)}
-                  className="h-auto justify-start whitespace-normal rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2 py-2 text-left font-mono text-[11px] text-slate-300 transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]"
-                >
-                  {command}
-                </Button>
-              ))
-            ) : (
-              <p className="border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2 py-2 font-mono text-[11px] text-slate-500">
-                No matching commands.
-              </p>
-            )}
-          </div>
-          </ScrollArea>
+            <ScrollArea className="max-h-[min(38svh,390px)] pr-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
+              <div className="grid gap-2">
+                {visibleCommands.length ? (
+                  visibleCommands.map((command) => (
+                    <Button
+                      key={command}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onCommand(command)}
+                      className="h-auto justify-start rounded-md border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-2 py-2 text-left font-mono text-[11px] whitespace-normal text-slate-300 transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]"
+                    >
+                      {command}
+                    </Button>
+                  ))
+                ) : (
+                  <p className="border border-[color:var(--shell-border)] bg-[var(--shell-bg)] px-2 py-2 font-mono text-[11px] text-slate-500">
+                    No matching commands.
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
           </Tabs>
         </CardContent>
       </Card>
@@ -2018,10 +2039,7 @@ function TerminalInspector({
   uptime: number
 }) {
   return (
-    <aside
-      className="min-h-0 rounded-lg lg:h-full"
-      data-inspector-open="true"
-    >
+    <aside className="min-h-0 rounded-lg lg:h-full" data-inspector-open="true">
       <Card className="h-full gap-0 rounded-lg border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100 ring-1 ring-white/10">
         <CardHeader className="px-3 py-3">
           <div className="flex items-center gap-2">
@@ -2059,7 +2077,10 @@ function TerminalInspector({
               />
             </div>
 
-            <Card size="sm" className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+            <Card
+              size="sm"
+              className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3"
+            >
               <CardHeader className="px-3">
                 <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
                   theme
@@ -2071,22 +2092,27 @@ function TerminalInspector({
                   onValueChange={(value) => setTheme(value as TerminalTheme)}
                 >
                   <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel)]">
-                    {(["cyan", "amber", "violet"] as TerminalTheme[]).map((item) => (
-                      <TabsTrigger
-                        key={item}
-                        value={item}
-                        data-terminal-theme={item}
-                        className="rounded-none px-2 py-2 font-mono text-[10px] uppercase"
-                      >
-                        {terminalThemes[item].label}
-                      </TabsTrigger>
-                    ))}
+                    {(["cyan", "amber", "violet"] as TerminalTheme[]).map(
+                      (item) => (
+                        <TabsTrigger
+                          key={item}
+                          value={item}
+                          data-terminal-theme={item}
+                          className="rounded-none px-2 py-2 font-mono text-[10px] uppercase"
+                        >
+                          {terminalThemes[item].label}
+                        </TabsTrigger>
+                      )
+                    )}
                   </TabsList>
                 </Tabs>
               </CardContent>
             </Card>
 
-            <Card size="sm" className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+            <Card
+              size="sm"
+              className="mt-4 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3"
+            >
               <CardHeader className="px-3">
                 <CardTitle className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
                   recent commands
@@ -2098,7 +2124,7 @@ function TerminalInspector({
                     history.slice(-6).map((item, index) => (
                       <p
                         key={`${item}-${index}`}
-                        className="break-words font-mono text-[11px] leading-5 text-slate-300"
+                        className="font-mono text-[11px] leading-5 break-words text-slate-300"
                       >
                         <span className={themeConfig.text}>$</span> {item}
                       </p>
@@ -2276,7 +2302,10 @@ function AboutOutput() {
                 <CardTitle className="text-lg text-slate-50">
                   {experience.title}
                 </CardTitle>
-                <Badge variant="outline" className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase">
+                <Badge
+                  variant="outline"
+                  className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase"
+                >
                   {experience.company} / {experience.period}
                 </Badge>
               </CardHeader>
@@ -2335,7 +2364,10 @@ function ProjectList({
             }
             className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
-            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]">
+            <Badge
+              variant="outline"
+              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]"
+            >
               {project.projectId}
             </Badge>
             <span className="min-w-0">
@@ -2357,7 +2389,10 @@ function ProjectList({
                 ))}
               </span>
             </span>
-            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
+            <Badge
+              variant="outline"
+              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase"
+            >
               {project.category}
             </Badge>
           </button>
@@ -2376,14 +2411,24 @@ function ProjectDetailOutput({
 }) {
   if (!project) {
     return (
-      <TerminalSection icon={FolderGit2} label="project" title="Project not found">
-        <TerminalLines lines={["Use projects to inspect available case studies."]} />
+      <TerminalSection
+        icon={FolderGit2}
+        label="project"
+        title="Project not found"
+      >
+        <TerminalLines
+          lines={["Use projects to inspect available case studies."]}
+        />
       </TerminalSection>
     )
   }
 
   return (
-    <TerminalSection icon={FolderGit2} label={project.projectId} title={project.title}>
+    <TerminalSection
+      icon={FolderGit2}
+      label={project.projectId}
+      title={project.title}
+    >
       <TerminalLines
         lines={[
           `Type: ${project.type}`,
@@ -2403,7 +2448,10 @@ function ProjectDetailOutput({
         <DetailBlock title="blockchain logic" text={project.blockchainLogic} />
         <DetailBlock title="database design" text={project.databaseDesign} />
         <DetailBlock title="security notes" text={project.securityNotes} />
-        <DetailBlock title="performance notes" text={project.performanceNotes} />
+        <DetailBlock
+          title="performance notes"
+          text={project.performanceNotes}
+        />
       </div>
       <div className="mt-6">
         <TerminalSubheading>backend decisions</TerminalSubheading>
@@ -2469,7 +2517,10 @@ function BlogOutput({
             onClick={() => onNavigate(`/blog/${log.slug}`, `note ${log.title}`)}
             className="grid gap-3 border border-[color:var(--shell-border)] bg-[var(--shell-bg)] p-3 text-left transition hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] sm:grid-cols-[96px_minmax(0,1fr)_auto]"
           >
-            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]">
+            <Badge
+              variant="outline"
+              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[11px] text-[var(--shell-accent-text)]"
+            >
               {log.number}
             </Badge>
             <span>
@@ -2480,7 +2531,10 @@ function BlogOutput({
                 {log.excerpt}
               </span>
             </span>
-            <Badge variant="outline" className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
+            <Badge
+              variant="outline"
+              className="h-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase"
+            >
               {log.readingTime}
             </Badge>
           </button>
@@ -2501,7 +2555,11 @@ function BlogDetailOutput({
 }) {
   if (!log) {
     return (
-      <TerminalSection icon={BookOpen} label="note" title="Engineering note not found">
+      <TerminalSection
+        icon={BookOpen}
+        label="note"
+        title="Engineering note not found"
+      >
         <TerminalLines lines={["Use blog to inspect available notes."]} />
       </TerminalSection>
     )
@@ -2528,10 +2586,13 @@ function BlogDetailOutput({
           </Badge>
         ))}
       </div>
-      <Card size="sm" className="mt-6 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+      <Card
+        size="sm"
+        className="mt-6 gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4"
+      >
         <CardContent className="px-4">
-        <TerminalSubheading>reading view</TerminalSubheading>
-        <div className="mt-2 max-w-none font-sans">{articleContent}</div>
+          <TerminalSubheading>reading view</TerminalSubheading>
+          <div className="mt-2 max-w-none font-sans">{articleContent}</div>
         </CardContent>
       </Card>
       <Button
@@ -2585,26 +2646,35 @@ function ArchitectureOutput() {
     <TerminalSection icon={Braces} label="architecture" title="System layers">
       <div className="grid gap-3">
         {architectureLayers.map((layer) => (
-          <Card key={layer.id} size="sm" className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+          <Card
+            key={layer.id}
+            size="sm"
+            className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4"
+          >
             <CardHeader className="px-4">
-              <CardTitle className="text-lg text-slate-50">{layer.label}</CardTitle>
-              <Badge variant="outline" className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase">
+              <CardTitle className="text-lg text-slate-50">
+                {layer.label}
+              </CardTitle>
+              <Badge
+                variant="outline"
+                className="w-fit rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-accent-text)] uppercase"
+              >
                 {layer.category} / {layer.flow.join(" -> ")}
               </Badge>
             </CardHeader>
             <CardContent className="px-4">
-            <p className="text-sm leading-7 text-slate-300">{layer.role}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {layer.stacks.map((stack) => (
-                <Badge
-                  key={stack}
-                  variant="outline"
-                  className="h-auto rounded-none border-[color:var(--shell-border)] px-2 py-1 font-mono text-[10px] text-slate-400"
-                >
-                  {stack}
-                </Badge>
-              ))}
-            </div>
+              <p className="text-sm leading-7 text-slate-300">{layer.role}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {layer.stacks.map((stack) => (
+                  <Badge
+                    key={stack}
+                    variant="outline"
+                    className="h-auto rounded-none border-[color:var(--shell-border)] px-2 py-1 font-mono text-[10px] text-slate-400"
+                  >
+                    {stack}
+                  </Badge>
+                ))}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -2628,7 +2698,10 @@ function TerminalSection({
     <Card className="gap-0 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-panel)] py-0 text-slate-100">
       <CardHeader className="px-4 py-4 sm:px-5">
         <div>
-          <Badge variant="outline" className="h-auto rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase">
+          <Badge
+            variant="outline"
+            className="h-auto rounded-none border-[color:var(--shell-border)] font-mono text-[10px] tracking-[0.18em] text-[var(--shell-accent-text)] uppercase"
+          >
             {label}
           </Badge>
           <CardTitle className="mt-2 text-2xl font-semibold text-slate-50 sm:text-3xl">
@@ -2663,7 +2736,10 @@ function TerminalSubheading({ children }: { children: ReactNode }) {
 
 function DetailBlock({ text, title }: { text: string; title: string }) {
   return (
-    <Card size="sm" className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4">
+    <Card
+      size="sm"
+      className="gap-3 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-4"
+    >
       <CardHeader className="px-4">
         <TerminalSubheading>{title}</TerminalSubheading>
       </CardHeader>
@@ -2676,14 +2752,17 @@ function DetailBlock({ text, title }: { text: string; title: string }) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <Card size="sm" className="gap-1 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+    <Card
+      size="sm"
+      className="gap-1 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3"
+    >
       <CardContent className="px-3">
-      <p className="font-heading text-2xl font-semibold text-slate-50">
-        {value}
-      </p>
-      <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
-        {label}
-      </p>
+        <p className="font-heading text-2xl font-semibold text-slate-50">
+          {value}
+        </p>
+        <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-slate-500 uppercase">
+          {label}
+        </p>
       </CardContent>
     </Card>
   )
@@ -2691,12 +2770,17 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function Telemetry({ label, value }: { label: string; value: string }) {
   return (
-    <Card size="sm" className="hidden gap-0 rounded-none border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-2 font-mono sm:block">
+    <Card
+      size="sm"
+      className="hidden gap-0 rounded-none border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-2 font-mono sm:block"
+    >
       <CardContent className="px-3">
-      <p className="text-[9px] tracking-[0.16em] text-slate-600 uppercase">
-        {label}
-      </p>
-      <p className="mt-1 text-[11px] text-[var(--shell-accent-text)]">{value}</p>
+        <p className="text-[9px] tracking-[0.16em] text-slate-600 uppercase">
+          {label}
+        </p>
+        <p className="mt-1 text-[11px] text-[var(--shell-accent-text)]">
+          {value}
+        </p>
       </CardContent>
     </Card>
   )
@@ -2712,17 +2796,23 @@ function StatusRow({
   value: string
 }) {
   return (
-    <Card size="sm" className="gap-0 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3">
+    <Card
+      size="sm"
+      className="gap-0 rounded-md border-[color:var(--shell-border)] bg-[var(--shell-bg)] py-3"
+    >
       <CardContent className="flex items-center justify-between gap-3 px-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <Icon className="size-4 shrink-0 text-[var(--shell-accent-text)]" />
-        <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
-          {label}
-        </span>
-      </div>
-      <Badge variant="outline" className="min-w-0 truncate rounded-none border-[color:var(--shell-border)] text-right font-mono text-[11px] text-slate-200">
-        {value}
-      </Badge>
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="size-4 shrink-0 text-[var(--shell-accent-text)]" />
+          <span className="font-mono text-[10px] tracking-[0.16em] text-slate-500 uppercase">
+            {label}
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className="min-w-0 truncate rounded-none border-[color:var(--shell-border)] text-right font-mono text-[11px] text-slate-200"
+        >
+          {value}
+        </Badge>
       </CardContent>
     </Card>
   )
