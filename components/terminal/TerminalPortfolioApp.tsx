@@ -24,7 +24,6 @@ import {
   Code2,
   Command,
   Cpu,
-  FileText,
   FolderGit2,
   Home,
   Mail,
@@ -1707,21 +1706,6 @@ function TerminalHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            aria-pressed={inspectorOpen}
-            aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
-            onClick={() => onInspectorOpenChange(!inspectorOpen)}
-            className={cn(
-              "h-9 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel-soft)] px-3 font-mono text-[10px] tracking-[0.14em] text-slate-300 uppercase hover:border-[color:var(--shell-border-strong)] hover:bg-[var(--shell-accent-soft)] hover:text-[var(--shell-accent-text)]",
-              inspectorOpen && cn(themeConfig.border, themeConfig.soft)
-            )}
-          >
-            <Activity data-icon="inline-start" />
-            Inspector
-          </Button>
           <Telemetry label="Clock" value={clock} />
           <Telemetry label="Ping" value={`${latency}ms`} />
           <a
@@ -1742,16 +1726,22 @@ function TerminalHeader({
           >
             <LinkedInIcon className="size-4" />
           </a>
-          <a
-            href="/resume.pdf"
+          <Button
+            type="button"
+            size="lg"
+            aria-pressed={inspectorOpen}
+            aria-label={inspectorOpen ? "Close inspector" : "Open inspector"}
+            onClick={() => onInspectorOpenChange(!inspectorOpen)}
             className={cn(
-              "inline-flex h-9 items-center gap-2 border px-3 text-sm font-semibold transition",
-              themeConfig.accent
+              "h-9 rounded-none border px-3 text-sm font-semibold transition",
+              inspectorOpen
+                ? cn(themeConfig.border, themeConfig.soft)
+                : themeConfig.accent
             )}
           >
-            <FileText className="size-4" />
-            Resume
-          </a>
+            <Activity className="size-4" />
+            Inspect
+          </Button>
         </div>
       </div>
         </CardContent>
