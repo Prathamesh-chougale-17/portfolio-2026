@@ -979,17 +979,43 @@ export function TerminalPortfolioApp({
     return () => window.removeEventListener("keydown", onWindowKeyDown)
   }, [])
 
-  function applyTheme(nextTheme: TerminalTheme) {
+  function recordCommand(command: string) {
+    const value = command.trim()
+    if (!value) return
+
+    const nextHistory = [...terminalSession.history, value]
+    terminalSession.history = nextHistory
+    setHistory(nextHistory)
+    setHistoryIndex(null)
+  }
+
+  function applyTheme(
+    nextTheme: TerminalTheme,
+    options: { recordHistory?: boolean } = {}
+  ) {
+    const changed = rememberedTerminalTheme !== nextTheme
     rememberedTerminalTheme = nextTheme
     setTheme(nextTheme)
     storeTerminalTheme(nextTheme)
+
+    if (options.recordHistory && changed) {
+      recordCommand(`theme ${nextTheme}`)
+    }
   }
 
-  function applyLanguage(nextLanguage: TerminalLanguage) {
+  function applyLanguage(
+    nextLanguage: TerminalLanguage,
+    options: { recordHistory?: boolean } = {}
+  ) {
+    const changed = rememberedTerminalLanguage !== nextLanguage
     rememberedTerminalLanguage = nextLanguage
     terminalSession.language = nextLanguage
     setLanguage(nextLanguage)
     storeTerminalLanguage(nextLanguage)
+
+    if (options.recordHistory && changed) {
+      recordCommand(`lang ${nextLanguage}`)
+    }
   }
 
   function applySidebarOpen(nextValue: boolean) {
@@ -1003,7 +1029,15 @@ export function TerminalPortfolioApp({
     setInspectorOpen(nextValue)
   }
 
-  function navigateTo(path: string, command = `cd ${path}`) {
+  function navigateTo(
+    path: string,
+    command = `cd ${path}`,
+    options: { recordHistory?: boolean } = {}
+  ) {
+    if (options.recordHistory ?? true) {
+      recordCommand(command)
+    }
+
     const target = normalizeRoute(path)
     if (!isValidRoute(target)) {
       appendEntry({
@@ -1108,10 +1142,14 @@ export function TerminalPortfolioApp({
 
     const pending = window.sessionStorage.getItem(PENDING_COMMAND_KEY)
     window.sessionStorage.removeItem(PENDING_COMMAND_KEY)
+    const command = pending ?? routeState.command
     terminalSession.lastRouteKey = routeKey
     window.setTimeout(() => {
+      if (!pending) {
+        recordCommand(command)
+      }
       appendEntry({
-        command: pending ?? routeState.command,
+        command,
         content: {
           articleContent,
           route: routeState,
@@ -1199,33 +1237,28 @@ export function TerminalPortfolioApp({
     const command = rawCommand.trim()
     if (!command) return
 
-    setHistory((current) => {
-      const nextHistory = [...current, command]
-      terminalSession.history = nextHistory
-      return nextHistory
-    })
-    setHistoryIndex(null)
+    recordCommand(command)
 
     const normalized = command.toLowerCase()
     const naturalRoute = resolveNaturalRouteCommand(command)
 
     if (naturalRoute) {
-      navigateTo(naturalRoute, command)
+      navigateTo(naturalRoute, command, { recordHistory: false })
       return
     }
 
     if (normalized === "home") {
-      navigateTo("/", command)
+      navigateTo("/", command, { recordHistory: false })
       return
     }
 
     if (normalized === "about") {
-      navigateTo("/about", command)
+      navigateTo("/about", command, { recordHistory: false })
       return
     }
 
     if (normalized === "projects" || normalized === "project") {
-      navigateTo("/projects", command)
+      navigateTo("/projects", command, { recordHistory: false })
       return
     }
 
@@ -1243,7 +1276,7 @@ export function TerminalPortfolioApp({
         })
         return
       }
-      navigateTo(`/projects/${project.slug}`, command)
+      navigateTo(`/projects/${project.slug}`, command, { recordHistory: false })
       return
     }
 
@@ -1252,7 +1285,7 @@ export function TerminalPortfolioApp({
       normalized === "logs" ||
       normalized === "notes"
     ) {
-      navigateTo("/blog", command)
+      navigateTo("/blog", command, { recordHistory: false })
       return
     }
 
@@ -1267,23 +1300,27 @@ export function TerminalPortfolioApp({
         })
         return
       }
-      navigateTo(`/blog/${log.slug}`, command)
+      navigateTo(`/blog/${log.slug}`, command, { recordHistory: false })
       return
     }
 
     if (normalized === "contact") {
-      navigateTo("/contact", command)
+      navigateTo("/contact", command, { recordHistory: false })
       return
     }
 
     if (/^(cd|set-location|sl)(\s|$)/i.test(command)) {
       const target = command.replace(/^(cd|set-location|sl)\s*/i, "")
-      navigateTo(resolveLocationTarget(target, routeState.path), command)
+      navigateTo(resolveLocationTarget(target, routeState.path), command, {
+        recordHistory: false,
+      })
       return
     }
 
     if (normalized.startsWith("open ")) {
-      navigateTo(command.replace(/^open\s+/i, ""), command)
+      navigateTo(command.replace(/^open\s+/i, ""), command, {
+        recordHistory: false,
+      })
       return
     }
 
@@ -2371,8 +2408,14 @@ function TerminalInspector({
   latency: number
   onOpenChange: (open: boolean) => void
   route: RouteState
-  setLanguage: (language: TerminalLanguage) => void
-  setTheme: (theme: TerminalTheme) => void
+  setLanguage: (
+    language: TerminalLanguage,
+    options?: { recordHistory?: boolean }
+  ) => void
+  setTheme: (
+    theme: TerminalTheme,
+    options?: { recordHistory?: boolean }
+  ) => void
   theme: TerminalTheme
   themeConfig: (typeof terminalThemes)[TerminalTheme]
   unlockedEggs: string[]
@@ -2434,7 +2477,9 @@ function TerminalInspector({
               <CardContent className="px-3">
                 <Tabs
                   value={theme}
-                  onValueChange={(value) => setTheme(value as TerminalTheme)}
+                  onValueChange={(value) =>
+                    setTheme(value as TerminalTheme, { recordHistory: true })
+                  }
                 >
                   <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel)]">
                     {(["cyan", "amber", "violet"] as TerminalTheme[]).map(
@@ -2467,7 +2512,9 @@ function TerminalInspector({
                 <Tabs
                   value={language}
                   onValueChange={(value) =>
-                    setLanguage(value as TerminalLanguage)
+                    setLanguage(value as TerminalLanguage, {
+                      recordHistory: true,
+                    })
                   }
                 >
                   <TabsList className="grid h-auto w-full grid-cols-3 rounded-none border border-[color:var(--shell-border)] bg-[var(--shell-panel)]">
