@@ -92,7 +92,7 @@ export function commandIndexLines() {
   return [
     "Navigation",
     "  cd /, cd /about, cd /projects, cd /blog, cd /contact, cd ..",
-    "  project <name>, note <name>",
+    "  project <slug>, blog <slug>, note <slug>",
     "Workspace",
     "  ls, ls -la, tree, pwd, date, uptime, env",
     "  cat profile.json|projects.json|notes.json|architecture.map",

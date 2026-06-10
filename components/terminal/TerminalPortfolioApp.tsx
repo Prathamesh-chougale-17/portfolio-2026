@@ -24,7 +24,7 @@ import {
 import { getProject, getResearchLog } from "@/data/event-horizon"
 import { cn } from "@/lib/utils"
 
-import { commandList, INITIAL_STAMP } from "./portfolio/constants"
+import { getTerminalSuggestions, INITIAL_STAMP } from "./portfolio/constants"
 import { runTerminalCommand } from "./portfolio/command-runner"
 import {
   isTerminalLanguage,
@@ -431,11 +431,7 @@ export function TerminalPortfolioApp({
   }, [])
 
   const suggestions = useMemo(() => {
-    const value = input.trim().toLowerCase()
-    if (!value) return []
-    return commandList
-      .filter((command) => command.toLowerCase().startsWith(value))
-      .slice(0, 5)
+    return getTerminalSuggestions(input)
   }, [input])
 
   const activeProject = routeState.selectedSlug
@@ -542,9 +538,7 @@ export function TerminalPortfolioApp({
 
     if (event.key === "Tab") {
       event.preventDefault()
-      const match = commandList.find((candidate) =>
-        candidate.toLowerCase().startsWith(input.toLowerCase())
-      )
+      const match = getTerminalSuggestions(input, 1)[0]
       if (match) setInput(match)
     }
   }

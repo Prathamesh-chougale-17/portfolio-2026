@@ -112,17 +112,55 @@ export const commandList = [
   "clear",
 ]
 
-export const allCommandShortcuts = commandList.map((command) =>
+const projectSlugCommands = projects.flatMap((project) => [
+  `project ${project.slug}`,
+  `cd /projects/${project.slug}`,
+])
+
+const blogSlugCommands = researchLogs.flatMap((log) => [
+  `blog ${log.slug}`,
+  `note ${log.slug}`,
+  `cd /blog/${log.slug}`,
+])
+
+const dynamicRouteCommands = [...projectSlugCommands, ...blogSlugCommands]
+
+const exampleCommandShortcuts = commandList.map((command) =>
   command === "project "
-    ? "project oorja-ai"
+    ? (dynamicRouteCommands.find((item) => item.startsWith("project ")) ??
+      "project oorja-ai")
     : command === "note "
-      ? "note production reliability"
+      ? (dynamicRouteCommands.find((item) => item.startsWith("note ")) ??
+        "note production reliability")
       : command === "grep "
         ? "grep backend"
         : command === "find "
           ? "find projects -name backend"
           : command
 )
+
+export const terminalSuggestionCommands = Array.from(
+  new Set([...commandList, ...dynamicRouteCommands])
+)
+
+export const allCommandShortcuts = Array.from(
+  new Set([...exampleCommandShortcuts, ...dynamicRouteCommands])
+)
+
+export function getTerminalSuggestions(input: string, limit = 5) {
+  const value = input.trimStart().toLowerCase()
+
+  if (!value.trim()) {
+    return []
+  }
+
+  return terminalSuggestionCommands
+    .filter((command) => command.toLowerCase().startsWith(value))
+    .filter(
+      (command) => command.toLowerCase() !== value || !value.endsWith(" ")
+    )
+    .slice(0, limit)
+}
 
 export const eggHints = [
   "xdg-open workbench",

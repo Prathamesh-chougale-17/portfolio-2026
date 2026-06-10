@@ -137,8 +137,12 @@ export function runTerminalCommand(
     return
   }
 
-  if (normalized.startsWith("log ") || normalized.startsWith("note ")) {
-    const query = command.replace(/^(log|note)\s+/i, "")
+  if (
+    normalized.startsWith("blog ") ||
+    normalized.startsWith("log ") ||
+    normalized.startsWith("note ")
+  ) {
+    const query = command.replace(/^(blog|log|note)\s+/i, "")
     const log = findResearchLog(query)
     if (!log) {
       appendEntry({
@@ -227,7 +231,7 @@ export function runTerminalCommand(
       appendEntry({
         command,
         lines: [
-          "Navigation: home, about, projects, project <name>, blog, note <name>, contact.",
+          "Navigation: home, about, projects, project <slug>, blog <slug>, note <slug>, contact.",
           "Routes: cd /about, cd /projects, cd /projects/<slug>, cd /blog/<slug>, cd ...",
           "Linux: ls, tree, pwd, cat <file>, grep <query>, find projects -name <query>.",
           "Data: whoami, status, skills, architecture, projects --backend, projects --blockchain.",
